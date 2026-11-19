@@ -27,7 +27,7 @@ const SJREADER = (() => {
     if (ensureSections._p) return ensureSections._p;
     ensureSections._p = new Promise((ok, bad) => {
       const s = document.createElement("script");
-      s.src = "data/sections.js?v=6";
+      s.src = "data/sections.js?v=7";
       s.onload = ok;
       s.onerror = () => bad(new Error("sections.js 加载失败"));
       document.head.appendChild(s);
@@ -78,16 +78,23 @@ const SJREADER = (() => {
       html += `<div class="secwrap" data-sec="${sid}">`;
       s.body.forEach((item, i) => {
         const gi = bodyBase + i;
-        html += `<div class="anchor" data-i="${gi}">◦ ${item.j || "（篇首）"}<span class="side">${wpSide(w, gi)}</span></div>`;
-        // 支流通行片（挂在对应锚）
+        // 支流通行片（并排模式入右栏首；普通模式独立一行）
         const tribsHere = w.tributaries.filter(t => t.jingIdx === i && t.src === "jing");
-        if (tribsHere.length) {
-          html += `<div>${tribsHere.map(t =>
-            `<span class="tribchip ${t.kind === "out" ? "out" : ""}" data-trib="${t.name}" title="${t.kind === "out" ? "从此水分出" : "汇入此水"}${t.dir ? " · " + t.dir : ""}">${t.kind === "out" ? "↑" : "↓"} ${t.name}</span>`).join("")}</div>`;
+        const tribChips = tribsHere.map(t =>
+          `<span class="tribchip ${t.kind === "out" ? "out" : ""}" data-trib="${t.name}" title="${t.kind === "out" ? "从此水分出" : "汇入此水"}${t.dir ? " · " + t.dir : ""}">${t.kind === "out" ? "↑" : "↓"} ${t.name}</span>`).join("");
+        if (jzMode === "split") {
+          // 经注并排：左经右注（窄屏自动叠放）
+          html += `<div class="splitpair">` +
+            `<div class="anchor sp-j" data-i="${gi}">◦ ${item.j || "（篇首）"}<span class="side">${wpSide(w, gi)}</span></div>` +
+            `<div class="sp-z">${tribChips ? `<div style="margin-bottom:4px">${tribChips}</div>` : ""}` +
+            (item.z || []).map(z => `<p>${citeLinks(z)}</p>`).join("") + `</div></div>`;
+        } else {
+          html += `<div class="anchor" data-i="${gi}">◦ ${item.j || "（篇首）"}<span class="side">${wpSide(w, gi)}</span></div>`;
+          if (tribsHere.length) html += `<div>${tribChips}</div>`;
+          (item.z || []).forEach(z => {
+            html += `<p class="zhu">${citeLinks(z)}</p>`;
+          });
         }
-        (item.z || []).forEach(z => {
-          html += `<p class="zhu">${citeLinks(z)}</p>`;
-        });
       });
       html += `</div>`;
       bodyBase += s.body.length;
@@ -191,14 +198,61 @@ const SJREADER = (() => {
     if (w) renderBody(w);
   }
   function cycleJz() {
-    setJzMode(jzMode === "both" ? "jing" : jzMode === "jing" ? "zhu" : "both");
+    setJzMode(jzMode === "both" ? "jing" : jzMode === "jing" ? "zhu" : jzMode === "zhu" ? "split" : "both");
+  }
+
+  /* ── TTS 朗读：当前锚点起，经文→注文顺序读（循水听书） ── */
+  const tts = { queue: [], idx: 0, on: false };
+  function collectFrom(i) {
+    const anchors = [...pbody().querySelectorAll(".anchor")];
+    const a = anchors[i];
+    if (!a) return [];
+    const items = [a.textContent.replace(/^◦\s*/, "").replace(/\s*·.*$/, "")];
+    if (a.classList.contains("sp-j")) {
+      const zbox = a.parentElement.querySelector(".sp-z");
+      if (zbox) zbox.querySelectorAll("p").forEach(p => items.push(p.textContent));
+      return items;
+    }
+    let el = a.nextElementSibling;
+    while (el && !el.classList.contains("anchor") && !el.classList.contains("splitpair")) {
+      if (el.classList.contains("zhu")) items.push(el.textContent);
+      el = el.nextElementSibling;
+    }
+    return items;
+  }
+  function ttsNext() {
+    if (!tts.on || tts.idx >= tts.queue.length) { ttsStop(); return; }
+    const u = new SpeechSynthesisUtterance(tts.queue[tts.idx++]);
+    u.lang = "zh-CN";
+    u.rate = 0.95;
+    const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.startsWith("zh"));
+    if (v) u.voice = v;
+    u.onend = () => setTimeout(ttsNext, 260);
+    speechSynthesis.speak(u);
+  }
+  function ttsToggle() {
+    if (tts.on) { ttsStop(); return; }
+    if (typeof speechSynthesis === "undefined") return;
+    tts.queue = collectFrom(curAnchor < 0 ? 0 : curAnchor);
+    if (!tts.queue.length) return;
+    tts.on = true; tts.idx = 0;
+    const b = document.getElementById("rtts");
+    if (b) b.textContent = "■ 停读";
+    ttsNext();
+  }
+  function ttsStop() {
+    tts.on = false;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    const b = document.getElementById("rtts");
+    if (b) b.textContent = "▷ 朗读";
   }
 
   function close() {
+    ttsStop();
     curId = null;
     document.getElementById("readerbar").classList.add("hidden");
   }
 
-  return { open, close, gotoAnchor, cycleJz, get current() { return curId; } };
+  return { open, close, gotoAnchor, cycleJz, ttsToggle, get current() { return curId; } };
 })();
 window.SJREADER = SJREADER;

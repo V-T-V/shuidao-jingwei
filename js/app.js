@@ -63,8 +63,17 @@ const SJAPP = (() => {
       document.getElementById("smoothlink").textContent = on ? "≈ 平滑·" : "≈ 平滑";
     });
     document.getElementById("tdlink").addEventListener("click", () => {
-      location.href = "3d.html?v=6";
+      location.href = "3d.html?v=7";
     });
+    document.getElementById("rtts").addEventListener("click", () => SJREADER.ttsToggle());
+    const nightBtn = document.getElementById("nightlink");
+    const nightApply = on => {
+      document.body.classList.toggle("night", on);
+      nightBtn.textContent = on ? "☀ 昼" : "☾ 夜读";
+      try { localStorage.setItem("sjzNight", on ? "1" : ""); } catch (e) {}
+    };
+    nightBtn.addEventListener("click", () => nightApply(!document.body.classList.contains("night")));
+    try { if (localStorage.getItem("sjzNight")) nightApply(true); } catch (e) {}
     document.getElementById("rprev").addEventListener("click", () => SJREADER.gotoAnchor(Math.max(0, curAnchorI() - 1), true));
     document.getElementById("rnext").addEventListener("click", () => SJREADER.gotoAnchor(curAnchorI() + 1, true));
     document.getElementById("rjingzhu").addEventListener("click", () => SJREADER.cycleJz());
@@ -182,7 +191,7 @@ const SJAPP = (() => {
     if (!t) {
       body.innerHTML = `<p class="kv">加载中……</p>`;
       const s = document.createElement("script");
-      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=6`;
+      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=7`;
       s.onload = () => openVol(v, q);
       document.head.appendChild(s);
       return;

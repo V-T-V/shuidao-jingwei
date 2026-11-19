@@ -67,6 +67,9 @@ RE_SIDE_TAIL = re.compile(r"(县|郡|城|邑)(之?)([东南西北]{1,2})?[，。
 
 # 引书: 《书名》曰/云/称/以为/说 …（《书名》后接谓词或独立成引）
 RE_CITE = re.compile(r"《([\u4e00-\u9fff·]{1,12})》(?=[曰云称说为言记])")
+# 引文句捕获：《书》曰 + 后续句（至 。；，顿——取 ≤90 字符）
+RE_CITE_QUOTE = re.compile(
+    r"《([\u4e00-\u9fff·]{1,12})》[曰云称]([^\u3000\n]{6,90}?[。；])")
 RE_CITE_ANY = re.compile(r"《([\u4e00-\u9fff·]{1,12})》")
 
 WATER_NAME_RE = re.compile(r"([\u4e00-\u9fff]{1,3}(?:水|水|澞))|([\u4e00-\u9fff]{2,4}(?:河|江|溪|川))")
@@ -206,6 +209,7 @@ def main():
     first_seen = {}
     citation_counter = Counter()
     citation_where = {}   # book -> {water: n}
+    citation_quotes = {}  # book -> [{q, water, vol}] ≤4 条（引书-引文数据库）
     appendix_texts = []
 
     order = 0
@@ -266,6 +270,13 @@ def main():
                         citation_where.setdefault(b.group(1), {})
                         citation_where[b.group(1)][water_name] = (
                             citation_where[b.group(1)].get(water_name, 0) + 1)
+                    # 引文句捕获（每书 ≤4 条，存水道与卷次出处）
+                    for q in RE_CITE_QUOTE.finditer(s):
+                        bk = q.group(1)
+                        qs = citation_quotes.setdefault(bk, [])
+                        text = q.group(2).lstrip("：，、； ")
+                        if len(qs) < 4 and not any(x["q"] == text for x in qs):
+                            qs.append({"q": text, "water": water_name, "vol": vol})
                     # 注文支流：句首水名 + 句尾注之/入焉 → 汇入当前水
                     for m4 in RE_ZHU_TRIB.finditer(s):
                         tn = m4.group(1)
@@ -327,7 +338,8 @@ def main():
                    "first_seen": first_seen}, f, ensure_ascii=False)
     with open(os.path.join(OUT_DIR, "citations.json"), "w", encoding="utf-8") as f:
         json.dump({"counts": dict(citation_counter.most_common()),
-                   "where": citation_where}, f, ensure_ascii=False)
+                   "where": citation_where,
+                   "quotes": citation_quotes}, f, ensure_ascii=False)
 
     m = out["meta"]
     print(f"分节 {m['sections']}（水道 {m['water_sections']}）")

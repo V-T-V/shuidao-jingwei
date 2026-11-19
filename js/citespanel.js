@@ -46,9 +46,20 @@ const SJCITES = (() => {
   function showBook(body, b) {
     const where = SJZ_CITES.where[b] || {};
     const rivers = Object.entries(where).sort((a, c) => c[1] - a[1]);
+    const quotes = (SJZ_CITES.quotes && SJZ_CITES.quotes[b]) || [];
     const max = rivers.length ? rivers[0][1] : 1;
     let html = `<div class="sect"><h3>《${b}》 ${LOST.has(b) ? "†" : ""}</h3>` +
-      `<p class="kv">全书被引 <b>${SJZ_CITES.counts[b] || 0}</b> 次 · 分布于 <b>${rivers.length}</b> 条水道</p></div>`;
+      `<p class="kv">全书被引 <b>${SJZ_CITES.counts[b] || 0}</b> 次 · 分布于 <b>${rivers.length}</b> 条水道` +
+      `${quotes.length ? ` · 存世引文样例 <b>${quotes.length}</b> 则` : ""}</p></div>`;
+    if (quotes.length) {
+      html += `<div class="sect"><h3>引文辑录 <span style="font-size:10px;color:var(--ink-faint)">——郦注所存此书之文</span></h3>`;
+      quotes.forEach((it, i) => {
+        html += `<div class="quotecard" data-q="${i}">` +
+          `<span class="qmeta">卷${it.vol} · ${it.water}</span>${it.q}` +
+          `<span class="qgo" title="循水至引文出处">↗</span></div>`;
+      });
+      html += `</div>`;
+    }
     html += `<div class="sect"><h3>按水道分布</h3>`;
     rivers.slice(0, 30).forEach(([rn, n]) => {
       html += `<div class="hbar"><span class="hn">${rn}</span>` +
@@ -65,6 +76,12 @@ const SJCITES = (() => {
         if (w) SJREADER.open(w.id);
       });
     });
+    body.querySelectorAll(".quotecard").forEach(el =>
+      el.addEventListener("click", () => {
+        const it = quotes[+el.dataset.q];
+        const w = SJZ.waterways.find(x => x.name === it.water);
+        if (w) SJREADER.open(w.id);
+      }));
   }
 
   return { open, LOST };

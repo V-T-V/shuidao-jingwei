@@ -136,6 +136,32 @@ body{
 .kv{font-size:13px;line-height:2;color:var(--ink-mid)}
 .kv b{color:var(--cinnabar-d);font-weight:400}
 
+/* 引文辑录卡 */
+.quotecard{position:relative;padding:9px 34px 9px 12px;margin:6px 0;font-size:13.5px;line-height:1.85;
+  color:var(--ink);background:rgba(47,93,112,.05);border-left:3px solid var(--wave-l);cursor:pointer}
+.quotecard:hover{background:rgba(47,93,112,.12)}
+.quotecard .qmeta{display:block;font-size:10px;letter-spacing:2px;color:var(--ink-faint);margin-bottom:3px}
+.quotecard .qgo{position:absolute;right:8px;top:8px;font-size:12px;color:var(--wave-d)}
+
+/* 经注并排（循水 · 第四态） */
+.splitpair{display:grid;grid-template-columns:minmax(30%,1fr) minmax(50%,2fr);gap:0;
+  border:1px solid var(--line);margin:0 0 14px}
+.splitpair .sp-j{padding:10px 12px;background:rgba(47,93,112,.12);font-size:15px;letter-spacing:1px;
+  border-right:1px solid var(--line);cursor:pointer}
+.splitpair .sp-j:hover{background:rgba(47,93,112,.2)}
+.splitpair .sp-z{padding:10px 14px;font-size:13.5px;line-height:1.9}
+.splitpair .sp-z p{margin:0 0 10px;text-indent:2em}
+@media (max-width:900px){.splitpair{grid-template-columns:1fr}}
+
+/* 夜读 */
+body.night{--silk:#1d2528;--silk-2:#192023;--silk-3:#232c30;--ink:#cfd8d3;--ink-mid:#9fb0a8;--ink-faint:#6b7d75;
+  --line:rgba(140,170,160,.22);
+  background:radial-gradient(ellipse 130% 100% at 50% 0%,#1a2226 0%,#141b1e 55%,#10171a 100%)}
+body.night #rail{background:linear-gradient(180deg,rgba(26,33,36,.96),rgba(22,29,32,.94))}
+body.night #panel{background:linear-gradient(180deg,rgba(30,38,42,.98),rgba(26,33,37,.98))}
+body.night #fbar,body.night #search,body.night #sresults{background:rgba(26,33,36,.96)}
+body.night #map .leaflet-tile-pane{filter:invert(1) hue-rotate(185deg) brightness(.92) contrast(.88) saturate(.6)}
+
 /* 图上水道要素 */
 .rivline{cursor:pointer}
 .wpdot{background:var(--wave-d);border:2px solid rgba(246,243,230,.9);border-radius:50%}
