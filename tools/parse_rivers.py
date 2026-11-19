@@ -89,8 +89,26 @@ INV_STOP = {"山水", "泉水", "大水", "洪水", "积水", "秋水", "之水"
             "川水", "止水", "活水", "死水", "为水", "即水", "乃水"}
 
 
+def split_water_names(text: str):
+    """从头标记行提取水名序列（最短优先：「桓水若水」→[桓水,若水]；「延江水」→[延江水]）。"""
+    names = []
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if i + 1 < len(text) and text[i + 1] == "水":
+            names.append(c + "水"); i += 2
+        elif i + 2 < len(text) and text[i + 1] != "水" and text[i + 2] == "水":
+            names.append(text[i:i + 3]); i += 3
+        elif i + 3 < len(text) and text[i + 3] == "水" and "水" not in text[i:i + 3]:
+            names.append(text[i:i + 4]); i += 4
+        else:
+            i += 1
+    return [n for i, n in enumerate(names) if n not in names[:i]]
+
+
 def split_sections(text: str):
-    """按 ○ 分节；○ 前的卷首文本归入上一节或卷序言。"""
+    """按 ○ 分节；○ 前的卷首文本归入上一节或卷序言。
+    复合头（卷36「青衣水 桓水若水…」/卷40「渐江水 斤江水」）按「X水出…」界拆子节。"""
     lines = text.split("\n")
     sections, cur, preamble = [], None, []
     for ln in lines:
@@ -104,7 +122,32 @@ def split_sections(text: str):
             preamble.append(ln)
     if cur:
         sections.append(cur)
-    return sections, preamble
+    # 复合头子分节
+    out = []
+    for sec in sections:
+        names = split_water_names(sec["header"])
+        if len(names) <= 1:
+            out.append(sec)
+            continue
+        joined = "\n".join(sec["lines"])
+        cur_name, cur_lines, started = names[0], [], False
+        for ln in sec["lines"]:
+            m = re.match(r"^([\u4e00-\u9fff〈〉]{1,4}水)出", ln)
+            is_new = False
+            if m:
+                nm = m.group(1)
+                if nm in names and nm != cur_name and started:
+                    is_new = True
+                elif nm != cur_name and started and len(nm) >= 2 and re.search(re.escape(nm) + r"(又|东|南|西|北|迳|历)", joined):
+                    is_new = True   # 头漏列而正文自成体系者（如侵离水）
+            if is_new:
+                out.append({"header": cur_name, "lines": cur_lines})
+                cur_name, cur_lines = m.group(1), [ln]
+            else:
+                cur_lines.append(ln)
+                started = True
+        out.append({"header": cur_name, "lines": cur_lines})
+    return out, preamble
 
 
 def parse_waypoints(jing_text: str, ctx, water_name: str = ""):
