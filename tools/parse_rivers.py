@@ -293,7 +293,14 @@ def main():
                     continue
                 inventory_counter[nm] += 1
                 if nm not in first_seen:
-                    first_seen[nm] = f"{vol}/{water_name}"
+                    # 首见条目：定位句（±至句号，≤80 字）
+                    s0 = joined.rfind("。", 0, m2.start()) + 1
+                    s1 = joined.find("。", m2.end())
+                    s1 = s1 + 1 if s1 > 0 else min(len(joined), m2.end() + 40)
+                    first_seen[nm] = {
+                        "loc": f"{vol}/{water_name}",
+                        "q": joined[s0:s1].replace("\n", "")[:80],
+                    }
             # 统计
             zhu_chars = sum(len(b["text"]) for b in river["blocks"])
             jing_chars = sum(len(j["text"]) for j in river["jing"])

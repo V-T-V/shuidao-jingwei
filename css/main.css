@@ -153,6 +153,9 @@ body.night .inv-filter{background:rgba(26,33,36,.9)}
 .inv-row .ik.分节{color:var(--cinnabar-d,#b23a2e);border-color:rgba(178,58,46,.4)}
 .inv-row .ik.支流{color:var(--jade-d,#46664f);border-color:rgba(90,131,104,.4)}
 .inv-row .if{margin-left:auto;font-size:10px;color:var(--ink-faint)}
+.inv-q{display:none;width:100%;margin:5px 0 3px;padding:7px 10px;font-size:12px;line-height:1.8;
+  color:var(--ink-mid);background:rgba(47,93,112,.06);border-left:2px solid var(--wave-l)}
+.inv-q .qgo{margin-left:8px;color:var(--cinnabar-d,#b23a2e);cursor:pointer}
 .quotecard{position:relative;padding:9px 34px 9px 12px;margin:6px 0;font-size:13.5px;line-height:1.85;
   color:var(--ink);background:rgba(47,93,112,.05);border-left:3px solid var(--wave-l);cursor:pointer}
 .quotecard:hover{background:rgba(47,93,112,.12)}

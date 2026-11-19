@@ -44,13 +44,21 @@ const SJSTATS = (() => {
           `<div class="inv-row" data-n="${n}"><span class="in">${n}</span>` +
           `<span class="ik ${v.kind}">${v.kind}</span>` +
           `<span style="font-size:11px;color:var(--ink-mid)">${v.n} 次</span>` +
-          `<span class="if">首见 ${v.first || "?"}</span></div>`).join("") ||
+          `<span class="if">首见 ${v.first || "?"}</span>` +
+          (v.q ? `<div class="inv-q">「${v.q}」<span class="qgo" data-go="${n}" title="循水/检索此名">↗</span></div>` : "") +
+          `</div>`).join("") ||
           `<p class="kv">未得。</p>`;
-        listEl.querySelectorAll(".inv-row").forEach(el =>
-          el.addEventListener("click", () => {
-            const w = SJZ.waterways.find(x => x.name === el.dataset.n);
+        listEl.querySelectorAll(".inv-row").forEach(row =>
+          row.addEventListener("click", () => {
+            const qel = row.querySelector(".inv-q");
+            if (qel) qel.style.display = qel.style.display === "block" ? "none" : "block";
+          }));
+        listEl.querySelectorAll("[data-go]").forEach(el =>
+          el.addEventListener("click", ev => {
+            ev.stopPropagation();
+            const w = SJZ.waterways.find(x => x.name === el.dataset.go);
             if (w) SJREADER.open(w.id);
-            else SJAPP.searchFor(el.dataset.n);
+            else SJAPP.searchFor(el.dataset.go);
           }));
       };
       render("");
@@ -58,7 +66,7 @@ const SJSTATS = (() => {
     };
     if (typeof window.SJZ_INV !== "undefined") { go(); return; }
     const s = document.createElement("script");
-    s.src = "data/inventory.js?v=8";
+    s.src = "data/inventory.js?v=10";
     s.onload = go;
     s.onerror = go;
     document.head.appendChild(s);

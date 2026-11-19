@@ -314,7 +314,12 @@ def main():
         if n < 2 or len(name) < 2:
             continue
         kind = "分节" if name in section_names else ("支流" if name in trib_names else "仅见")
-        inv_out[name] = {"n": n, "first": inv["first_seen"].get(name, ""), "kind": kind}
+        fs = inv["first_seen"].get(name, "")
+        if isinstance(fs, dict):
+            first, fq = fs.get("loc", ""), fs.get("q", "")
+        else:
+            first, fq = fs, ""
+        inv_out[name] = {"n": n, "first": first, "q": fq, "kind": kind}
     with open(os.path.join(DATA, "inventory.js"), "w", encoding="utf-8") as f:
         f.write("/* 水道经纬 · 水名录全书清单（懒加载）· build_river_data.py 生成 */\n")
         f.write("window.SJZ_INV = " + json.dumps(inv_out, ensure_ascii=False, separators=(",", ":")) + ";\n")
