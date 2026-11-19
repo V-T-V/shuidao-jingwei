@@ -63,7 +63,7 @@ const SJAPP = (() => {
       document.getElementById("smoothlink").textContent = on ? "≈ 平滑·" : "≈ 平滑";
     });
     document.getElementById("tdlink").addEventListener("click", () => {
-      location.href = "3d.html?v=4";
+      location.href = "3d.html?v=5";
     });
     document.getElementById("rprev").addEventListener("click", () => SJREADER.gotoAnchor(Math.max(0, curAnchorI() - 1), true));
     document.getElementById("rnext").addEventListener("click", () => SJREADER.gotoAnchor(curAnchorI() + 1, true));
@@ -180,7 +180,7 @@ const SJAPP = (() => {
     if (!t) {
       body.innerHTML = `<p class="kv">加载中……</p>`;
       const s = document.createElement("script");
-      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=4`;
+      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=5`;
       s.onload = () => openVol(v, q);
       document.head.appendChild(s);
       return;

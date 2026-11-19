@@ -24,6 +24,8 @@ python tools/fetch_text.py        # Phase 0 抓取（断点续抓，已有则跳
 python tools/parse_rivers.py      # Phase 1 经注分离 + 航点/支流
 python tools/build_river_data.py  # Phase 2 折线 + 前端产物
 python tools/build_crossref.py    # 互文快照（需方舆经纬语料）
+python tools/build_modern_rivers.py # 今水真河线（Natural Earth 50m 缝合，需 data_raw/ne_rivers.geojson）
+python tools/calibrate_jing.py      # 经注分离校准（方法 B：抽样+语法纯度硬门）
 python tools/build_analysis.py    # docs/ANALYSIS.md
 python tools/build_paper_pdf.py   # 研究论文 PDF（docs/水道经纬-*.pdf，lint 哨兵联动）
 python run_tests.py               # lint 119 项 + 数据断言
@@ -49,6 +51,8 @@ python run_tests.py               # lint 119 项 + 数据断言
 - 经注分离：规则法（方法 A），经文 7,442 字（学界 7,000±1,000 内）
 - 坐标：人工考据近似（±20km 级），航点覆盖 88.9%；「昆仑」等神话源标记 mythic 不入折线
 - 折线：直线段实录 + 可选 Catmull-Rom 平滑；方位偏移试探 + 2-opt 去交叉（基线 4 处，lint 防退化）
+- 今水层：Natural Earth 50m 真河线（黄/长/汉/赣/西江缝合）+ 手绘线兜底；改道区对真线重算
+- 经注分离校准：B1 学理抽样 15/15 · B2a 语法纯度 100%（硬门）；B2b 骨架 101/120（报告项，docs/CALIBRATION.md）
 - 水道计数：112 条分节水道 + 147 条支流边（与陈桥驿 1,252 口径差异见 ANALYSIS.md §7）
 
 ## 版本

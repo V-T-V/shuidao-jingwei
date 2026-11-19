@@ -99,17 +99,25 @@ const SJMAP = (() => {
     }
   }
 
-  /* ── 古今对照：今水层 + 改道区 ───────────────────── */
+  /* ── 古今对照：今水层 + 改道区 ─────────────────────
+     NE 真实河线（data/modern_rivers.js）优先，config 手绘线兜底（按 linkTo 合并去重） */
+  function modernSet() {
+    const ne = (typeof SJZ_MODERN !== "undefined") ? SJZ_MODERN : [];
+    const neLinks = new Set(ne.map(x => x.linkTo));
+    return ne.concat(MODERN_RIVERS.filter(x => !neLinks.has(x.linkTo)));
+  }
+
   function renderModern(on) {
     modernLayer.clearLayers(); devLayer.clearLayers();
     if (!on) return;
-    MODERN_RIVERS.forEach(m => {
+    const MS = modernSet();
+    MS.forEach(m => {
       L.polyline(m.pts, { className: "modernline", color: m.color, weight: 3.4, opacity: .9, dashArray: "2 7" })
         .bindTooltip(`今·${m.key}`, { direction: "top" }).addTo(modernLayer);
     });
-    // 改道区：古折线（对应水道）每段中点距今水线 > DEVIATION_KM → 朱红高亮
+    // 改道区：古折线（对应水道）每段中点距今水线垂距 > DEVIATION_KM → 朱红高亮
     SJZ.waterways.forEach(w => {
-      const m = MODERN_RIVERS.find(x => x.linkTo === w.name || x.linkTo === w.name.slice(0, -1));
+      const m = MS.find(x => x.linkTo === w.name || x.linkTo === w.name.slice(0, -1));
       if (!m || w.path.length < 2) return;
       for (let i = 0; i < w.path.length - 1; i++) {
         const mid = [(w.path[i][0] + w.path[i + 1][0]) / 2, (w.path[i][1] + w.path[i + 1][1]) / 2];

@@ -50,6 +50,13 @@ def data_asserts():
           f"引书 {len(cites['counts'])} · 自交叉 {sjz['meta']['crossings']} · 互文 940")
 
 
+def calibration():
+    r = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "calibrate_jing.py"), "--strict"],
+                       capture_output=True, text=True, encoding="utf-8")
+    print(r.stdout.strip())
+    assert r.returncode == 0, "经注分离校准未过（B1 抽样或 B2 完备性）"
+
+
 def browser_pages():
     pages = [f for f in os.listdir(os.path.join(ROOT, "tests")) if f.startswith("assert_")]
     print(f"浏览器断言页 {len(pages)} 枚：{', '.join(pages)}")
@@ -59,6 +66,7 @@ def browser_pages():
 if __name__ == "__main__":
     step("lint", lint)
     step("数据断言", data_asserts)
+    step("经注分离校准（方法 B）", calibration)
     step("浏览器断言页", browser_pages)
     if fails:
         print(f"✗✗ 回归失败：{', '.join(fails)}")
