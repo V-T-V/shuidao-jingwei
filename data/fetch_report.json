@@ -1,0 +1,253 @@
+{
+ "source": "http://www.guoxue123.com/shibu/0301/00sjz",
+ "vols": [
+  {
+   "num": "000",
+   "chars": 685,
+   "paras": 8,
+   "cached": false
+  },
+  {
+   "num": "001",
+   "chars": 8183,
+   "paras": 22,
+   "cached": false
+  },
+  {
+   "num": "002",
+   "chars": 13221,
+   "paras": 27,
+   "cached": false
+  },
+  {
+   "num": "003",
+   "chars": 8193,
+   "paras": 37,
+   "cached": false
+  },
+  {
+   "num": "004",
+   "chars": 11433,
+   "paras": 31,
+   "cached": false
+  },
+  {
+   "num": "005",
+   "chars": 14528,
+   "paras": 38,
+   "cached": false
+  },
+  {
+   "num": "006",
+   "chars": 11397,
+   "paras": 94,
+   "cached": false
+  },
+  {
+   "num": "007",
+   "chars": 7633,
+   "paras": 47,
+   "cached": false
+  },
+  {
+   "num": "008",
+   "chars": 10314,
+   "paras": 67,
+   "cached": false
+  },
+  {
+   "num": "009",
+   "chars": 14074,
+   "paras": 116,
+   "cached": false
+  },
+  {
+   "num": "010",
+   "chars": 11223,
+   "paras": 75,
+   "cached": false
+  },
+  {
+   "num": "011",
+   "chars": 9222,
+   "paras": 57,
+   "cached": false
+  },
+  {
+   "num": "012",
+   "chars": 3446,
+   "paras": 38,
+   "cached": false
+  },
+  {
+   "num": "013",
+   "chars": 10411,
+   "paras": 24,
+   "cached": false
+  },
+  {
+   "num": "014",
+   "chars": 10650,
+   "paras": 46,
+   "cached": false
+  },
+  {
+   "num": "015",
+   "chars": 10600,
+   "paras": 50,
+   "cached": false
+  },
+  {
+   "num": "016",
+   "chars": 12745,
+   "paras": 54,
+   "cached": false
+  },
+  {
+   "num": "017",
+   "chars": 6743,
+   "paras": 31,
+   "cached": false
+  },
+  {
+   "num": "018",
+   "chars": 2522,
+   "paras": 12,
+   "cached": false
+  },
+  {
+   "num": "019",
+   "chars": 13690,
+   "paras": 32,
+   "cached": false
+  },
+  {
+   "num": "020",
+   "chars": 7151,
+   "paras": 21,
+   "cached": false
+  },
+  {
+   "num": "021",
+   "chars": 7166,
+   "paras": 46,
+   "cached": false
+  },
+  {
+   "num": "022",
+   "chars": 16230,
+   "paras": 101,
+   "cached": false
+  },
+  {
+   "num": "023",
+   "chars": 8213,
+   "paras": 23,
+   "cached": false
+  },
+  {
+   "num": "024",
+   "chars": 11940,
+   "paras": 47,
+   "cached": false
+  },
+  {
+   "num": "025",
+   "chars": 10959,
+   "paras": 60,
+   "cached": false
+  },
+  {
+   "num": "026",
+   "chars": 12562,
+   "paras": 66,
+   "cached": false
+  },
+  {
+   "num": "027",
+   "chars": 5741,
+   "paras": 15,
+   "cached": false
+  },
+  {
+   "num": "028",
+   "chars": 8714,
+   "paras": 40,
+   "cached": false
+  },
+  {
+   "num": "029",
+   "chars": 7132,
+   "paras": 49,
+   "cached": false
+  },
+  {
+   "num": "030",
+   "chars": 8784,
+   "paras": 35,
+   "cached": false
+  },
+  {
+   "num": "031",
+   "chars": 8904,
+   "paras": 73,
+   "cached": false
+  },
+  {
+   "num": "032",
+   "chars": 6664,
+   "paras": 115,
+   "cached": false
+  },
+  {
+   "num": "033",
+   "chars": 8394,
+   "paras": 60,
+   "cached": false
+  },
+  {
+   "num": "034",
+   "chars": 5666,
+   "paras": 20,
+   "cached": false
+  },
+  {
+   "num": "035",
+   "chars": 5617,
+   "paras": 27,
+   "cached": false
+  },
+  {
+   "num": "036",
+   "chars": 11736,
+   "paras": 49,
+   "cached": false
+  },
+  {
+   "num": "037",
+   "chars": 10261,
+   "paras": 81,
+   "cached": false
+  },
+  {
+   "num": "038",
+   "chars": 8772,
+   "paras": 69,
+   "cached": false
+  },
+  {
+   "num": "039",
+   "chars": 7951,
+   "paras": 85,
+   "cached": false
+  },
+  {
+   "num": "040",
+   "chars": 12859,
+   "paras": 120,
+   "cached": false
+  }
+ ],
+ "total_chars": 382329,
+ "fetched_at": "2026-11-19 11:48:46"
+}
