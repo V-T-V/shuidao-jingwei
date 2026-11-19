@@ -73,7 +73,7 @@ def erya_jing(text):
     parts = re.split(r"\[疏\]", text)
     keep = []
     for seg in parts:
-        seg = re.sub(r"（[^）]{4,}）", "", seg)
+        seg = re.sub(r"（[^）]*）", "", seg)
         seg = re.sub(r"\([^)]{4,}\)", "", seg)
         seg = re.sub(r"○[^。]*。?", "", seg)
         keep.append(seg)
@@ -84,6 +84,16 @@ def norm(s):
     return re.sub(r"[^\u4e00-\u9fff]", "", s)
 
 
+def jing_head(q):
+    """引文 → 经首：切去「郭景纯曰/郭璞曰/注云/《注》云」及其后注文——
+    郦注引书常作「经句+注家语」连体（如「颍别为沙。郭景纯曰：…」），
+    校底本只应取经首；返回 (经首, 是否切分)。"""
+    m = re.search(r"郭景纯曰|郭璞曰|注云|《注》云", q)
+    if m and m.start() >= 2:
+        return q[:m.start()].rstrip("。；，"), True
+    return q, False
+
+
 def containment(nq, hay):
     """涵盖率：引文字符在底本局部窗口内按序出现的比例。"""
     import difflib
@@ -92,7 +102,7 @@ def containment(nq, hay):
     if nq in hay:
         return 1.0
     sm = difflib.SequenceMatcher(None, nq, hay, autojunk=False)
-    anchors = [b for b in sorted(sm.get_matching_blocks(), key=lambda b: -b.size)[:5] if b.size >= 3]
+    anchors = [b for b in sorted(sm.get_matching_blocks(), key=lambda b: -b.size)[:5] if b.size >= 2]
     if not anchors:
         return 0.0
     best, L = 0.0, len(nq)
@@ -145,9 +155,13 @@ def main():
         rows = []
         hits_by_base = {}
         for it in quotes:
-            nq = norm(it["q"])
+            head, split = jing_head(it["q"])
+            nh = norm(head)
+            used_head = split and len(nh) >= 3
+            nq = nh if used_head else norm(it["q"])
             if not nq:
                 continue
+            head_tag = "（注语切分·校经首）" if used_head else ""
             best_r, best_base = 0.0, ""
             for bn in base_names:
                 r = containment(nq, hays[bn])
@@ -158,10 +172,10 @@ def main():
                 hits_by_base[best_base] = hits_by_base.get(best_base, 0) + 1
             if r >= 0.98:
                 exact += 1
-                verdict = f"逐字命中（涵盖 {r * 100:.0f}%）{base_tag}"
+                verdict = f"逐字命中（涵盖 {r * 100:.0f}%）{head_tag}{base_tag}"
             elif r >= 0.75:
                 variant += 1
-                verdict = f"节引/异文命中（涵盖 {r * 100:.0f}%）{base_tag}"
+                verdict = f"节引/异文命中（涵盖 {r * 100:.0f}%）{head_tag}{base_tag}"
             else:
                 miss += 1
                 verdict = f"未命中（最高涵盖 {r * 100:.0f}%）——{attrib_miss(it['q'])}"
