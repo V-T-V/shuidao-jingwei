@@ -69,7 +69,7 @@ RE_SIDE_TAIL = re.compile(r"(县|郡|城|邑)(之?)([东南西北]{1,2})?[，。
 RE_CITE = re.compile(r"《([\u4e00-\u9fff·]{1,12})》(?=[曰云称说为言记])")
 # 引文句捕获：《书》曰 + 后续句（至 。；，顿——取 ≤90 字符）
 RE_CITE_QUOTE = re.compile(
-    r"《([\u4e00-\u9fff·]{1,12})》[曰云称]([^\u3000\n]{6,90}?[。；])")
+    r"《([\u4e00-\u9fff·]{1,12})》[曰云称]([^\u3000\n]{2,90}?[。；])")
 RE_CITE_ANY = re.compile(r"《([\u4e00-\u9fff·]{1,12})》")
 
 WATER_NAME_RE = re.compile(r"([\u4e00-\u9fff]{1,3}(?:水|水|澞))|([\u4e00-\u9fff]{2,4}(?:河|江|溪|川))")
