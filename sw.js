@@ -3,7 +3,7 @@
                        TILES 瓦片限额存（stale-while-revalidate）
    VERSION 与 index.html 的 ?v 同步递增（当前 v1）。 */
 
-const VERSION = "v5";
+const VERSION = "v6";
 const SHELL = `sjz-${VERSION}-shell`;
 const TEXTS = `sjz-${VERSION}-texts`;
 const TILES = `sjz-${VERSION}-tiles`;
@@ -11,14 +11,14 @@ const TILE_CAP = 1200;
 
 const SHELL_FILES = [
   "./", "./index.html", "./manifest.json",
-  "./css/main.css?v=5",
+  "./css/main.css?v=6",
   "./vendor/leaflet.js", "./vendor/leaflet.css",
-  "./data/river_data.js?v=5", "./data/citations.js?v=5", "./data/crossref.js?v=5", "./data/modern_rivers.js?v=5",
+  "./data/river_data.js?v=6", "./data/citations.js?v=6", "./data/crossref.js?v=6", "./data/modern_rivers.js?v=6",
   "./icons/icon-192.png", "./icons/icon-512.png",
-  "./js/config.js?v=5", "./js/map.js?v=5", "./js/tree.js?v=5",
-  "./js/reader.js?v=5", "./js/search.js?v=5", "./js/citespanel.js?v=5",
-  "./js/stats.js?v=5", "./js/crosspanel.js?v=5", "./js/exporter.js?v=5",
-  "./js/app.js?v=5", "./js/ftworker.js",
+  "./js/config.js?v=6", "./js/map.js?v=6", "./js/tree.js?v=6",
+  "./js/reader.js?v=6", "./js/search.js?v=6", "./js/citespanel.js?v=6",
+  "./js/stats.js?v=6", "./js/crosspanel.js?v=6", "./js/exporter.js?v=6",
+  "./js/app.js?v=6", "./js/ftworker.js",
 ];
 
 self.addEventListener("install", e => {

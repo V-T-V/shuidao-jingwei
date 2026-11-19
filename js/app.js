@@ -63,7 +63,7 @@ const SJAPP = (() => {
       document.getElementById("smoothlink").textContent = on ? "≈ 平滑·" : "≈ 平滑";
     });
     document.getElementById("tdlink").addEventListener("click", () => {
-      location.href = "3d.html?v=5";
+      location.href = "3d.html?v=6";
     });
     document.getElementById("rprev").addEventListener("click", () => SJREADER.gotoAnchor(Math.max(0, curAnchorI() - 1), true));
     document.getElementById("rnext").addEventListener("click", () => SJREADER.gotoAnchor(curAnchorI() + 1, true));
@@ -153,7 +153,9 @@ const SJAPP = (() => {
     // 后世引用（互文）
     const xm = (typeof SJZ_XREF !== "undefined" && SJZ_XREF.waterMentions && SJZ_XREF.waterMentions[w.name]) || 0;
     if (xm) html += `<div class="sect"><h3>后世引用</h3><p class="kv">《读史方舆纪要》提及此水 <b>${xm}</b> 次 ` +
-      `<span class="tribchip" data-cross="1">→ 方舆经纬对读</span></p></div>`;
+      `<span class="tribchip" data-cross="1">→ 互文面板</span> ` +
+      `<a href="https://v-t-v.github.io/fangyu-jingwei/" target="_blank" rel="noopener" ` +
+      `style="color:var(--cinnabar-d,#b23a2e);text-decoration:none;border-bottom:1px dotted;margin-left:4px">方舆经纬对读 ↗</a></p></div>`;
     html += `<button class="ftool" id="goread" style="margin-top:6px">▸ 循水而读</button>`;
     body.innerHTML = html;
     body.className = "";
@@ -180,7 +182,7 @@ const SJAPP = (() => {
     if (!t) {
       body.innerHTML = `<p class="kv">加载中……</p>`;
       const s = document.createElement("script");
-      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=5`;
+      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=6`;
       s.onload = () => openVol(v, q);
       document.head.appendChild(s);
       return;

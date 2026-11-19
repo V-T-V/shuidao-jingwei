@@ -4,6 +4,15 @@
    方向二：本站水道详情的「后世引用」栏（SJXREF.waterMentions） */
 
 const SJXREF = (() => {
+  /* 方舆经纬线上站（Pages 已活）与省名→站内 pid（深链 #mode=舆图&p=<pid>） */
+  const FY_SITE = "https://v-t-v.github.io/fangyu-jingwei/";
+  const FY_PID = {
+    "北直隶": "beizhi", "南直隶": "nanzhi", "山东": "shandong", "山西": "shanxi",
+    "河南": "henan", "陕西": "shanxix", "四川": "sichuan", "湖广": "huguang",
+    "江西": "jiangxi", "浙江": "zhejiang", "福建": "fujian", "广东": "guangdong",
+    "广西": "guangxi", "云南": "yunnan", "贵州": "guizhou",
+  };
+
   function open() {
     SJAPP.setMode("cross");
     document.getElementById("vname").textContent = "互文 · 顾祖禹引郦道元";
@@ -18,10 +27,14 @@ const SJXREF = (() => {
       <div class="statcard"><b>${data.provinces.length}</b><span>布政使司涉及</span></div>
       <div class="statcard"><b>1,100</b><span>年跨度（527→1692）</span></div>
     </div>`;
-    html += `<div class="sect"><h3>按省分布</h3>`;
+    html += `<div class="sect"><h3>按省分布 <span style="font-size:10px;color:var(--ink-faint)">点省名 → 方舆经纬观其省域</span></h3>`;
     const max = data.provinces.length ? data.provinces[0][1] : 1;
     data.provinces.forEach(([p, n]) => {
-      html += `<div class="hbar"><span class="hn">${p}</span>` +
+      const pid = FY_PID[p];
+      const link = pid ? `${FY_SITE}#mode=%E8%88%86%E5%9B%BE&p=${pid}` : FY_SITE;
+      html += `<div class="hbar"><span class="hn"><a href="${link}" target="_blank" rel="noopener" ` +
+        `style="color:inherit;text-decoration:none;border-bottom:1px dotted rgba(74,122,155,.6)" ` +
+        `title="赴方舆经纬 · ${p}">${p}</a></span>` +
         `<span class="hv" style="width:${Math.max(2, n / max * 300)}px"></span><span class="hc">${n}</span></div>`;
     });
     html += `</div>`;
