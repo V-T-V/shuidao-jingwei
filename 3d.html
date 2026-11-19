@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>水道经纬 · 三维形胜</title>
-<link rel="stylesheet" href="vendor/maplibre-gl.css?v=16">
+<link rel="stylesheet" href="vendor/maplibre-gl.css?v=17">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--ink:#232b30;--ink-mid:#4c5a61;--wave:#2f5d70;--wave-d:#24495a;--silk-3:#f3f0e0;--line:rgba(60,72,80,.34)}
@@ -38,7 +38,7 @@ body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;col
 <div id="m3d"></div>
 <div id="top">
   <div class="brand">三维形胜 · 水道经纬</div>
-  <button class="back" onclick="location.href='index.html?v=16'">◂ 返回舆图</button>
+  <button class="back" onclick="location.href='index.html?v=17'">◂ 返回舆图</button>
 </div>
 <div id="pick"><h4>循水飞行</h4><div id="plist"></div></div>
 <div id="demnote">高程数据不可用 · 已降为平面显示</div>
@@ -49,8 +49,8 @@ body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;col
 </div>
 <div id="hint">拖拽旋转 · 右键俯仰 · 滚轮缩放 · 点河流线循水而读</div>
 
-<script src="vendor/maplibre-gl.js?v=16"></script>
-<script src="data/river_data.js?v=16"></script>
+<script src="vendor/maplibre-gl.js?v=17"></script>
+<script src="data/river_data.js?v=17"></script>
 <script>
 (() => {
   const colors = { "河水":"#3d8ec4","汾水":"#4a7a9b","济水":"#2f8c7a","渭水":"#57805f","洛水":"#57805f",
@@ -134,7 +134,7 @@ body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;col
     new maplibregl.Popup({ offset: 8 })
       .setLngLat(e.lngLat)
       .setHTML(`<b>${f.properties.name}</b><br>注文 ${f.properties.chars.toLocaleString()} 字<br>` +
-               `<a href="index.html?v=16#r=${f.properties.id}">▸ 循水而读</a>`)
+               `<a href="index.html?v=17#r=${f.properties.id}">▸ 循水而读</a>`)
       .addTo(m3);
   });
   m3.on("mouseenter", "rivers", () => { m3.getCanvas().style.cursor = "pointer"; });
@@ -148,10 +148,12 @@ body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;col
     if (flying) { flying = false; await new Promise(r => setTimeout(r, 200)); }
     flying = true;
     flyctl.style.display = "flex";
-    flyname.textContent = `${w.name} · 源 → 委`;
+    const totKm = w.stats.totalKm ? ` / ${w.stats.totalKm.toLocaleString()} km` : "";
+  flyname.textContent = `${w.name} · 源 → 委${totKm}`;
     const step = Math.max(1, Math.floor(w.path.length / 26));
     const pts = w.path.filter((_, i) => i % step === 0 || i === w.path.length - 1);
     const zoom = w.path.length > 30 ? 6.6 : 7.4;
+    const kmAt = i => { const p = w.waypoints.filter(x => "km" in x); return p.length ? p[Math.min(i, p.length - 1)].km : null; };
     // 首点镜头先行；动画能力探测：easeTo 无效（rAF 节流环境）则退 jumpTo 逐点推进
     let animated = false;
     if (m3.isStyleLoaded()) {
@@ -169,7 +171,9 @@ body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;col
           m3.easeTo({ center: [pts[i][1], pts[i][0]], zoom, pitch: 52, bearing: -12, duration: 950 });
           setTimeout(done, 1600);   // moveend 兜底（地形加载中可能迟发）
         } else {
-          setTimeout(() => { try { m3.jumpTo({ center: [pts[i][1], pts[i][0]], zoom, pitch: 52, bearing: -12 }); } catch (e) {} ok(); }, 750);
+          setTimeout(() => { try { m3.jumpTo({ center: [pts[i][1], pts[i][0]], zoom, pitch: 52, bearing: -12 }); } catch (e) {}
+            const km = kmAt(i); if (km != null) flyname.textContent = `${w.name} · ${Math.round(km).toLocaleString()}${totKm}`;
+            ok(); }, 750);
         }
       });
     }

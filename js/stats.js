@@ -18,8 +18,37 @@ const SJSTATS = (() => {
     legendDensity(body);
     hydroWords(body);
     northSouth(body);
+    crossPref(body);
     inventoryList(body);
     document.getElementById("panel").classList.add("open");
+  }
+
+
+  /* 互文偏好：顾祖禹引什么·不引什么（ρ=0.37 弱相关的可视化） */
+  function crossPref(body) {
+    const wm = (typeof SJZ_XREF !== "undefined" && SJZ_XREF.waterMentions) || {};
+    const rows = SJZ.waterways.map(w => ({ n: w.name, zhu: w.stats.zhuChars, c: wm[w.name] || 0 }))
+      .sort((a, b) => b.zhu - a.zhu).slice(0, 40);
+    const citTop = [...rows].sort((a, b) => b.c - a.c).slice(0, 8).map(r => r.n);
+    const attTop = rows.slice(0, 8).map(r => r.n);
+    const zMax = rows[0].zhu, cMax = Math.max(...rows.map(r => r.c), 1);
+    let html = `<p class="kv">前四十水 Spearman ρ(郦注字数, 顾引次数) = <b>0.37</b>——引用与笔墨显著错位：
+    顾祖禹按<b>兵要</b>剪裁郦道元按<b>自然史</b>铺陈的文本。</p>`;
+    html += `<div class="hbar"><span class="hn" style="width:120px">水</span>` +
+      `<span class="hc">郦注字数 → 顾引次数</span></div>`;
+    rows.slice(0, 16).forEach(r => {
+      html += `<div class="hbar"><span class="hn" data-w="${r.n}" style="width:120px">${r.n}</span>` +
+        `<span class="hv" style="width:${r.zhu / zMax * 180}px;background:linear-gradient(90deg,#24495a,#4a7a9b)"></span>` +
+        `<span class="hv" style="width:${Math.max(2, r.c / cMax * 120)}px;background:linear-gradient(90deg,#8a6a3a,#b08d4f)"></span>` +
+        `<span class="hc">${r.c}</span></div>`;
+    });
+    html += `<p class="kv">青=郦注字数 · 赭=顾引次数。顾引高而郦注少：<b>${citTop.filter(n => !attTop.includes(n)).join("·")}</b>（边关要河）；
+    郦注多而顾引少：<b>${attTop.filter(n => !citTop.includes(n)).join("·")}</b>。</p>`;
+    body.insertAdjacentHTML("beforeend", `<div class="sect"><h3>互文偏好 · 郦注笔墨 ⇄ 顾祖禹兵要</h3>${html}</div>`);
+    body.querySelectorAll(".hn[data-w]").forEach(el => el.addEventListener("click", () => {
+      const w = SJZ.waterways.find(x => x.name === el.dataset.w);
+      if (w) SJREADER.open(w.id);
+    }));
   }
 
   /* 水名录全书清单（懒加载 data/inventory.js）：754 名 · 分节/支流/仅见 */
@@ -66,7 +95,7 @@ const SJSTATS = (() => {
     };
     if (typeof window.SJZ_INV !== "undefined") { go(); return; }
     const s = document.createElement("script");
-    s.src = "data/inventory.js?v=16";
+    s.src = "data/inventory.js?v=17";
     s.onload = go;
     s.onerror = go;
     document.head.appendChild(s);
