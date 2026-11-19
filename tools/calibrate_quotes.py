@@ -37,6 +37,17 @@ BASES = {
         "url": "http://www.guoxue123.com/shibu/0101/00hs/{v:03d}.htm",
         "vols": [37, 38], "cache": "hsdz", "mode": "raw",
     },
+    "郡国志": {
+        "url": "http://www.guoxue123.com/shibu/0101/00hhs/{v:03d}.htm",
+        "vols": [118, 119, 120, 121, 122], "cache": "hhsjgz", "mode": "raw",
+    },
+}
+
+# 引文书名 → 受检底本（地理志引文兼检汉志与续汉书·郡国志，取高者并记实指）
+QUOTE_BASE_MAP = {
+    "山海经": ["山海经"],
+    "尔雅": ["尔雅"],
+    "地理志": ["地理志", "郡国志"],
 }
 
 
@@ -116,30 +127,41 @@ def main():
                "|---|---|---|---|---|---|"]
     total_e = total_v = total_m = 0
 
-    for book, cfg in BASES.items():
+    hays = {}
+    for name, cfg in BASES.items():
         cache_dir = os.path.join(ROOT, "data_raw", cfg["cache"])
         os.makedirs(cache_dir, exist_ok=True)
         text = "".join(fetch_vol(cfg["url"].format(v=v), os.path.join(cache_dir, f"{v}.txt"))
                        for v in cfg["vols"])
         if cfg["mode"] == "jing":
             text = erya_jing(text)
-        hay = norm(CC.convert(text))
+        hays[name] = norm(CC.convert(text))
+
+    for book, base_names in QUOTE_BASE_MAP.items():
         quotes = quotes_all.get(book, [])
         if not quotes:
             continue
         exact = variant = miss = 0
         rows = []
+        hits_by_base = {}
         for it in quotes:
             nq = norm(it["q"])
             if not nq:
                 continue
-            r = containment(nq, hay)
+            best_r, best_base = 0.0, ""
+            for bn in base_names:
+                r = containment(nq, hays[bn])
+                if r > best_r:
+                    best_r, best_base = r, bn
+            r, base_tag = best_r, (f"〔实指{best_base}〕" if len(base_names) > 1 and best_r >= 0.75 else "")
+            if base_tag:
+                hits_by_base[best_base] = hits_by_base.get(best_base, 0) + 1
             if r >= 0.98:
                 exact += 1
-                verdict = f"逐字命中（涵盖 {r * 100:.0f}%）"
+                verdict = f"逐字命中（涵盖 {r * 100:.0f}%）{base_tag}"
             elif r >= 0.75:
                 variant += 1
-                verdict = f"节引/异文命中（涵盖 {r * 100:.0f}%）"
+                verdict = f"节引/异文命中（涵盖 {r * 100:.0f}%）{base_tag}"
             else:
                 miss += 1
                 verdict = f"未命中（最高涵盖 {r * 100:.0f}%）——{attrib_miss(it['q'])}"
@@ -150,9 +172,11 @@ def main():
         total_v += variant
         total_m += miss
         summary.append(f"| 《{book}》 | {n} | {exact} | {variant} | {miss} | {rate:.0f}% |")
-        print(f"《{book}》：底本 {len(hay)} 字 · 逐字 {exact} · 节引/异文 {variant} · 未命中 {miss} —— {rate:.0f}%")
+        print(f"《{book}》：{' + '.join(f'{bn}:{len(hays[bn])}字' for bn in base_names)} · 逐字 {exact} · 节引/异文 {variant} · 未命中 {miss} —— {rate:.0f}%"
+              + (f" · 实指{hits_by_base}" if len(base_names) > 1 else ""))
 
-        md += [f"## 《{book}》（底本 {len(hay)} 字）", "",
+        md += [f"## 《{book}》（底本 {' + '.join(f'{bn} {len(hays[bn])} 字' for bn in base_names)}）", "",
+               *( [f"> 实指分布：{hits_by_base}" + "（涵盖 ≥75% 者计）——郦注引「{0}」兼指诸志的目录学证据".format(book)] if len(base_names) > 1 else [] ),
                "| 引文 | 出处 | 判定 |",
                "|---|---|---|"]
         for it, verdict in rows:
@@ -171,7 +195,8 @@ def main():
         "## 底本与方法的边界",
         "",
         "- 尔雅底本为注疏本剥经（去 [疏]/（郭注）/○ 音注），残存少量混排噪声 → 其命中率是下界",
-        "- 汉书地理志底本为颜师古注混排本，且《水经注》引「地理志」兼指《续汉书·郡国志》→ 其 45% 是下界（混排噪声+续志歧指）",
+        "- 汉书地理志底本为颜师古注混排本 → 其 45% 是下界（混排噪声为主）",
+        "- 郡国志底本疑为节本（五卷共 10,848 字，每卷约 2 千字）——实指判定仅对涵盖 ≥75% 者有效：本样例 9 条命中全实指汉志，无一须借续志解释（保守口径）",
         "- 尔雅之未命中多为郦注化用——将「一成，坯」式释诂体转为「山一成谓之伥」叙述体，字面涵盖率必然偏低，非引文失实",
         "- 涵盖率窗口 ±1.6~2.2 倍引文长，通假斩锚以多锚点（前五块）应对",
     ]
