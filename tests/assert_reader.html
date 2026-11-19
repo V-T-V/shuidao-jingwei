@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>水道经纬 · 循水断言</title>
+<style>
+body{font-family:KaiTi,serif;background:#1a2f38;color:#eef0e4;padding:24px;line-height:1.8}
+h2{font-weight:400;letter-spacing:4px;border-bottom:1px solid #4a7a9b;padding-bottom:6px}
+.pass{color:#7fae8d}.fail{color:#e08a7e;font-weight:bold}
+li{list-style:none;margin:4px 0}
+iframe{display:none}
+</style>
+</head>
+<body>
+<h2>循水而读断言 · 河水（昆仑→渤海）</h2>
+<ul id="out"></ul>
+<iframe id="stage" src="../index.html#m=map"></iframe>
+<script>
+const out = document.getElementById("out");
+let n = 0, bad = 0;
+function assert(cond, label) {
+  n++;
+  const li = document.createElement("li");
+  li.textContent = (cond ? "✓ " : "✗ ") + label;
+  li.className = cond ? "pass" : "fail";
+  if (!cond) bad++;
+  out.appendChild(li);
+}
+const frame = document.getElementById("stage");
+function report() {
+  const title = bad === 0 ? `PASS (${n})` : `FAIL (${bad}/${n})`;
+  document.title = title;
+  const li = document.createElement("li");
+  li.textContent = `—— ${title}`;
+  li.className = bad === 0 ? "pass" : "fail";
+  out.appendChild(li);
+}
+frame.addEventListener("load", async () => {
+  try {
+    const W = frame.contentWindow;
+    // 等应用装配（自动点掉序幕）——SJZ 为 script 作用域 const，跨窗不可见，
+    // 以 window 挂载对象（SJMAP/SJREADER）为准
+    for (let i = 0; i < 100; i++) {
+      const boot = W.document.querySelector("#boot .go");
+      if (boot) boot.click();
+      if (W.SJREADER && W.SJMAP && W.document.querySelector("#boot") === null) break;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    await W.SJREADER.open("sjz-001");
+    for (let i = 0; i < 60; i++) {
+      if (W.document.querySelectorAll("#pbody .anchor").length > 0) break;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    const doc = W.document;
+    const anchors = doc.querySelectorAll("#pbody .anchor");
+    assert(anchors.length === 53, `河水锚点 ${anchors.length} = 53（经文句数·跨五卷）`);
+    assert(doc.getElementById("vname").textContent === "河水", "循水阅读标题=河水");
+    // 飞行目标记录（真代码路径；每步清空+沉降，取该步最后一个目标——
+    // 滚动 debounce 会追加飞行，属循水跟随正常行为）
+    const rec = [];
+    const orig = W.SJMAP.flyTo;
+    W.SJMAP.flyTo = (pos) => { rec.push([+pos[0].toFixed(1), +pos[1].toFixed(1)]); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    async function flyTarget(idx) {
+      rec.length = 0;
+      W.SJREADER.gotoAnchor(idx, true);
+      await sleep(900);
+      return rec[rec.length - 1];
+    }
+    const f8 = await flyTarget(8), f24 = await flyTarget(24), f52 = await flyTarget(52);
+    W.SJMAP.flyTo = orig;
+    assert(f8 && f8[0] >= 36 && f8[0] <= 37.2 && f8[1] >= 102 && f8[1] <= 105.5,
+      `锚8（金城允吾·麦田）飞抵 ${f8}（上游陇西）`);
+    assert(f24 && f24[0] >= 36.5 && f24[0] <= 37.5 && f24[1] >= 110 && f24[1] <= 111.5,
+      `锚24（土军县西）飞抵 ${f24}（中游晋西）`);
+    assert(f52 && f52[0] > 37 && f52[1] > 117,
+      `锚52（甲下邑）飞抵 ${f52}（入海口）`);
+    // 经注三态
+    W.SJREADER.cycleJz();
+    const zhuHidden = [...doc.querySelectorAll("#pbody .zhu")].every(z => W.getComputedStyle(z).display === "none");
+    W.SJREADER.cycleJz(); W.SJREADER.cycleJz();
+    assert(zhuHidden, "经文模式隐藏注文");
+    assert(/源→终/.test(doc.getElementById("rprog").textContent), "循水进度条工作");
+  } catch (e) {
+    assert(false, "异常：" + e.message);
+  }
+  report();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+/* ═══════════════════════════════════════════════════════════════
+   水道经纬 —— 水经注四十卷 · 主样式
+   水蓝绢本 · 河流为主角 · 七模式（舆图/循水/对照/引书/计量/互文/关于）
+   承方舆经纬设计语言，主色由石青让位于沧浪
+   ═══════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --silk:#e9e6d4; --silk-2:#e0dcc6; --silk-3:#f3f0e0;
+  --ink:#232b30; --ink-mid:#4c5a61; --ink-faint:#84929a;
+  --wave:#2f5d70; --wave-d:#24495a;          /* 沧浪 */
+  --wave-l:#4a7a9b;
+  --jade:#5a8368; --jade-d:#46664f;
+  --ochre:#9a6b3f;
+  --cinnabar:#b23a2e; --cinnabar-d:#8e2b22;  /* 朱砂——改道区 */
+  --gold:#b08d4f;
+  --line:rgba(60,72,80,.34);
+}
+html,body{height:100%}
+body{
+  font-family:"FangSong","STFangsong","仿宋","FangSong_GB2312","Songti SC","SimSun",serif;
+  color:var(--ink); overflow:hidden;
+  background:radial-gradient(ellipse 130% 100% at 50% 0%,#e7ecdf 0%,#dee3d2 55%,#d6dcc6 100%);
+}
+
+/* ── 底图：水色绢面滤镜 ─────────────────────────────── */
+#map{position:fixed;inset:0;z-index:0;background:#dee3d2}
+#map .leaflet-tile-pane{filter:sepia(.10) brightness(1.04) contrast(.92) saturate(.82) hue-rotate(-6deg)}
+#map .leaflet-control-attribution{display:none!important}
+#map .leaflet-control-zoom a{
+  background:var(--silk-3)!important;color:var(--ink)!important;
+  border-color:var(--line)!important;font-weight:400!important;
+}
+#map .leaflet-control-zoom{border:1px solid var(--line)!important;box-shadow:0 2px 8px rgba(30,45,55,.18)}
+.paper-wash{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 140% 110% at 50% 40%,transparent 52%,rgba(52,82,96,.13) 100%),
+    repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,252,240,.05) 3px 4px);
+}
+
+/* ── 顶栏模式 ───────────────────────────────────────── */
+#modes{position:fixed;top:0;left:0;right:0;z-index:22;display:flex;justify-content:center;gap:2px;
+  padding:10px 0;pointer-events:none}
+#modes .mode{pointer-events:auto;font-family:inherit;font-size:14px;letter-spacing:3px;cursor:pointer;
+  color:var(--ink-mid);background:rgba(243,240,224,.88);border:1px solid var(--line);
+  padding:6px 14px;transition:all .18s}
+#modes .mode:hover{color:var(--wave-d)}
+#modes .mode.active{color:#f6f3e6;background:var(--wave-d);border-color:var(--wave-d)}
+#modes span{pointer-events:auto;align-self:center;color:var(--ink-faint);font-size:11px}
+
+/* ── 检索 ───────────────────────────────────────────── */
+#searchwrap{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:21;width:min(520px,86vw)}
+#search{width:100%;font-family:inherit;font-size:13px;letter-spacing:1px;color:var(--ink);
+  background:rgba(243,240,224,.94);border:1px solid var(--line);padding:8px 12px;outline:none}
+#search:focus{border-color:var(--wave)}
+#sresults{max-height:min(46vh,420px);overflow:auto;background:rgba(247,245,235,.97);
+  border:1px solid var(--line);border-top:none;display:none}
+#sresults .sr{padding:8px 12px;border-bottom:1px solid rgba(60,72,80,.14);cursor:pointer;font-size:13px}
+#sresults .sr:hover{background:rgba(47,93,112,.08)}
+#sresults .sr .where{color:var(--wave-d);font-size:11px;letter-spacing:1px;margin-right:8px}
+#sresults .sr mark{background:rgba(178,58,46,.22);color:inherit}
+
+/* ── 左列 · 水系树 ──────────────────────────────────── */
+#rail{position:fixed;top:0;left:0;bottom:44px;width:236px;z-index:20;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(238,240,226,.96),rgba(232,236,218,.94));
+  border-right:1px solid var(--line);transition:transform .25s}
+#rail.hidden{transform:translateX(-100%)}
+.rt{padding:58px 16px 10px;font-size:16px;letter-spacing:4px;color:var(--wave-d);
+  border-bottom:1px solid var(--line)}
+.rt small{display:block;font-size:10px;letter-spacing:2px;color:var(--ink-faint);margin-top:3px}
+#raillist{flex:1;overflow:auto;padding:8px 6px 20px}
+#raillist::-webkit-scrollbar{width:5px}
+#raillist::-webkit-scrollbar-thumb{background:rgba(47,93,112,.3)}
+.tnode{user-select:none}
+.tnode .trow{display:flex;align-items:center;gap:4px;padding:3px 8px;cursor:pointer;font-size:13px;
+  letter-spacing:1px;color:var(--ink-mid);border-radius:2px;white-space:nowrap}
+.tnode .trow:hover{background:rgba(47,93,112,.1);color:var(--wave-d)}
+.tnode .trow.cur{color:#f6f3e6;background:var(--wave)}
+.tnode .tglyph{width:14px;text-align:center;font-size:9px;color:var(--ink-faint);flex:none}
+.tnode .trow.cur .tglyph{color:rgba(246,243,230,.8)}
+.tnode .tchars{margin-left:auto;font-size:9px;color:var(--ink-faint)}
+.tkids{margin-left:15px;border-left:1px dotted rgba(60,72,80,.3);padding-left:4px;display:none}
+.tkids.open{display:block}
+
+/* ── 右幅面板 ───────────────────────────────────────── */
+#panel{position:fixed;top:0;right:0;bottom:44px;width:min(560px,94vw);z-index:23;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(245,243,231,.98),rgba(240,238,222,.98));
+  border-left:1px solid var(--line);box-shadow:-6px 0 24px rgba(30,45,55,.14);
+  transform:translateX(105%);transition:transform .28s}
+#panel.open{transform:none}
+#pclose{position:absolute;top:64px;right:10px;z-index:2;font-family:inherit;cursor:pointer;font-size:13px;
+  color:var(--ink-faint);background:none;border:1px solid var(--line);padding:2px 8px}
+#pclose:hover{color:var(--cinnabar)}
+.vtitle{padding:58px 20px 12px;border-bottom:2px solid var(--wave-d);display:flex;align-items:center;gap:12px}
+.vname{font-size:30px;letter-spacing:8px;color:var(--ink)}
+.vseal{flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;letter-spacing:2px;color:#f6f3e6;background:var(--cinnabar-d);
+  border-radius:3px;box-shadow:inset 0 0 0 2px rgba(246,243,230,.35)}
+#pmeta{padding:10px 20px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:1px;
+  color:var(--ink-mid);display:flex;flex-wrap:wrap;gap:6px 16px;background:rgba(47,93,112,.05)}
+#pbody{flex:1;overflow:auto;padding:16px 20px 30px;font-size:15px;line-height:1.95;letter-spacing:.5px}
+#pbody::-webkit-scrollbar{width:6px}
+#pbody::-webkit-scrollbar-thumb{background:rgba(47,93,112,.3)}
+
+/* 循水阅读 */
+.anchor{margin:0 0 4px;padding:10px 12px;background:rgba(47,93,112,.09);border-left:3px solid var(--wave);
+  font-size:16px;letter-spacing:1px;cursor:pointer}
+.anchor:hover{background:rgba(47,93,112,.16)}
+.anchor.cur{border-left-color:var(--cinnabar);background:rgba(178,58,46,.07)}
+.anchor .side{font-size:10px;color:var(--ink-faint);margin-left:8px;letter-spacing:0}
+.zhu{margin:0 0 18px;text-indent:2em;color:var(--ink);font-size:14px;line-height:1.9}
+.zhu .cite{color:var(--wave-d);cursor:pointer;border-bottom:1px dotted rgba(47,93,112,.5)}
+.tribchip{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;font-size:11px;letter-spacing:1px;
+  color:var(--jade-d);border:1px solid rgba(90,131,104,.5);border-radius:10px;cursor:pointer;background:rgba(90,131,104,.07)}
+.tribchip:hover{background:rgba(90,131,104,.2)}
+.tribchip.out{color:var(--ochre);border-color:rgba(154,107,63,.5);background:rgba(154,107,63,.07)}
+.termcard{padding:12px;margin:8px 0 18px;text-align:center;background:rgba(178,58,46,.06);
+  border:1px dashed rgba(178,58,46,.4);color:var(--cinnabar-d);letter-spacing:2px}
+.readonly-jing .zhu{display:none}
+.readonly-zhu .anchor{opacity:.45;font-size:13px}
+.readonly-zhu .zhu{display:block}
+
+/* 引书 / 计量 / 互文 面板通用 */
+.hbar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:12px;letter-spacing:0}
+.hbar .hn{width:86px;text-align:right;flex:none;color:var(--ink-mid);cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar .hn:hover{color:var(--wave-d)}
+.hbar .hv{height:13px;background:linear-gradient(90deg,var(--wave),var(--wave-l));flex:none;min-width:2px}
+.hbar .hc{color:var(--ink-faint);font-size:10px}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0}
+.statcard{padding:12px;background:rgba(47,93,112,.06);border:1px solid var(--line);text-align:center}
+.statcard b{display:block;font-size:24px;color:var(--wave-d);font-weight:400}
+.statcard span{font-size:11px;letter-spacing:2px;color:var(--ink-faint)}
+.sect{margin-bottom:22px}
+.sect h3{font-size:15px;letter-spacing:3px;color:var(--wave-d);margin-bottom:8px;
+  border-bottom:1px solid var(--line);padding-bottom:5px;font-weight:400}
+.kv{font-size:13px;line-height:2;color:var(--ink-mid)}
+.kv b{color:var(--cinnabar-d);font-weight:400}
+
+/* 图上水道要素 */
+.rivline{cursor:pointer}
+.wpdot{background:var(--wave-d);border:2px solid rgba(246,243,230,.9);border-radius:50%}
+.termflag{font-size:11px;color:#f6f3e6;background:var(--cinnabar-d);padding:2px 6px;border-radius:2px;
+  letter-spacing:1px;white-space:nowrap;box-shadow:0 1px 4px rgba(30,45,55,.4)}
+.modernline{cursor:default}
+.devzone{cursor:pointer}
+
+/* ── 底栏 ───────────────────────────────────────────── */
+#fbar{position:fixed;left:0;right:0;bottom:0;height:44px;z-index:22;display:flex;align-items:center;
+  gap:10px;padding:0 14px;font-size:12px;letter-spacing:1px;color:var(--ink-mid);
+  background:rgba(238,240,226,.95);border-top:1px solid var(--line)}
+#fbar .sep{width:1px;height:16px;background:var(--line)}
+.ftool{font-family:inherit;font-size:12px;letter-spacing:1px;cursor:pointer;color:var(--ink-mid);
+  background:none;border:1px solid var(--line);padding:3px 10px;transition:all .15s}
+.ftool:hover{color:var(--wave-d);border-color:var(--wave)}
+#fbar .right{margin-left:auto;display:flex;gap:14px;font-size:10px;color:var(--ink-faint)}
+#modelabel{color:var(--wave-d);letter-spacing:3px}
+
+/* ── 循水控制条 ─────────────────────────────────────── */
+#readerbar{position:fixed;left:50%;bottom:56px;transform:translateX(-50%);z-index:23;display:flex;gap:6px;
+  padding:6px;background:rgba(238,240,226,.96);border:1px solid var(--line);border-radius:3px;
+  box-shadow:0 3px 12px rgba(30,45,55,.2)}
+#readerbar.hidden{display:none}
+#readerbar button{font-family:inherit;font-size:12px;letter-spacing:1px;cursor:pointer;color:var(--ink-mid);
+  background:none;border:1px solid var(--line);padding:4px 10px}
+#readerbar button:hover{color:var(--wave-d)}
+#rprog{align-self:center;font-size:12px;letter-spacing:2px;color:var(--wave-d);min-width:120px;text-align:center}
+
+/* ── 序幕 ───────────────────────────────────────────── */
+#boot{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse 130% 110% at 50% 30%,#24414d 0%,#1a2f38 55%,#142429 100%);
+  transition:opacity .6s;color:#eef0e4}
+#boot.off{opacity:0;pointer-events:none}
+.bt{text-align:center;max-width:520px;padding:20px}
+.bt .seal-row{display:flex;justify-content:center;gap:10px;margin-bottom:18px}
+.bseal{width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:22px;
+  color:#f0ead8;background:rgba(178,58,46,.85);border-radius:3px;letter-spacing:0;
+  box-shadow:inset 0 0 0 2px rgba(240,234,216,.3),0 4px 14px rgba(0,0,0,.35)}
+.bseal.b2{background:rgba(47,93,112,.9);animation:drift 3.2s ease-in-out infinite}
+@keyframes drift{50%{transform:translateY(-5px)}}
+.bt h1{font-size:46px;letter-spacing:22px;text-indent:22px;font-weight:400;margin-bottom:10px}
+.bt .sub{font-size:13px;letter-spacing:4px;color:#a8b8bd;margin-bottom:22px}
+.bt .quote{font-size:13px;letter-spacing:2px;color:#7d949b;margin:20px 0 26px;line-height:2}
+.wave{display:flex;justify-content:center;gap:5px;height:26px;align-items:flex-end;margin:8px 0}
+.wave i{width:5px;height:8px;background:#4a7a9b;border-radius:2px;animation:wv 1.6s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.15s}.wave i:nth-child(3){animation-delay:.3s}
+.wave i:nth-child(4){animation-delay:.45s}.wave i:nth-child(5){animation-delay:.6s}
+.wave i:nth-child(6){animation-delay:.75s}
+@keyframes wv{0%,100%{height:6px;opacity:.5}50%{height:24px;opacity:1}}
+.go{font-family:inherit;font-size:16px;letter-spacing:10px;text-indent:10px;cursor:pointer;
+  color:#eef0e4;background:none;border:1px solid rgba(238,240,228,.5);padding:10px 38px;transition:all .25s}
+.go:hover{background:rgba(74,122,155,.35);border-color:#eef0e4}
+.hint{font-size:10px;letter-spacing:3px;color:#68808a;margin-top:16px}
+
+/* 响应式 */
+@media (max-width:900px){
+  #rail{width:190px}
+  #panel{width:100vw}
+  .bt h1{font-size:32px;letter-spacing:12px;text-indent:12px}
+}

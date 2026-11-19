@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>水道经纬 · 数据断言</title>
+<style>
+body{font-family:KaiTi,serif;background:#1a2f38;color:#eef0e4;padding:24px;line-height:1.8}
+h2{font-weight:400;letter-spacing:4px;border-bottom:1px solid #4a7a9b;padding-bottom:6px}
+.pass{color:#7fae8d}.fail{color:#e08a7e;font-weight:bold}
+li{list-style:none;margin:4px 0}
+pre{color:#a8b8bd;font-size:12px}
+</style>
+</head>
+<body>
+<h2>数据断言 · 水道经纬</h2>
+<ul id="out"></ul>
+<script src="../data/river_data.js?v=2"></script>
+<script src="../data/citations.js?v=2"></script>
+<script>
+const out = document.getElementById("out");
+let n = 0, bad = 0;
+function assert(cond, label) {
+  n++;
+  const li = document.createElement("li");
+  li.textContent = (cond ? "✓ " : "✗ ") + label;
+  li.className = cond ? "pass" : "fail";
+  if (!cond) bad++;
+  out.appendChild(li);
+}
+assert(SJZ.meta.waterways >= 100, `水道 ${SJZ.meta.waterways} ≥ 100`);
+assert(SJZ.meta.wpTotal >= 500, `航点 ${SJZ.meta.wpTotal} ≥ 500`);
+assert(SJZ.meta.coverage >= 60, `航点覆盖率 ${SJZ.meta.coverage}% ≥ 60%`);
+assert(SJZ.meta.citationKinds >= 350, `引书 ${SJZ.meta.citationKinds} 种 ≥ 350`);
+const hs = SJZ.waterways.find(w => w.name === "河水");
+assert(hs && hs.stats.zhuChars > 15000, `河水注文字 ${hs && hs.stats.zhuChars} > 15000`);
+assert(SJZ.meta.crossings <= 4, `折线自交叉 ${SJZ.meta.crossings} ≤ 4`);
+assert(hs.waypoints.some(w => w.mythic && w.name === "昆仑"), "河水神话源（昆仑）标记为 mythic");
+assert(SJZ.tree.roots.length > 5, `水系树根 ${SJZ.tree.roots.length} > 5`);
+const tribTotal = SJZ.waterways.reduce((a, w) => a + w.tributaries.length, 0);
+assert(tribTotal >= 140, `支流拓扑边 ${tribTotal} ≥ 140`);
+assert(Object.keys(SJZ_CITES.counts).length === SJZ.meta.citationKinds, "引书数据库与元数据一致");
+const title = bad === 0 ? `PASS (${n})` : `FAIL (${bad}/${n})`;
+document.title = title;
+const li = document.createElement("li");
+li.textContent = `—— ${title}`;
+li.className = bad === 0 ? "pass" : "fail";
+out.appendChild(li);
+</script>
+</body>
+</html>

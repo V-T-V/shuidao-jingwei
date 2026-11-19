@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>水道经纬 · 水经注四十卷全图</title>
+<meta name="description" content="北魏郦道元《水经注》四十卷数字人文平台——112 条水道轨迹、经注分离、循水而读、引书考古">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="vendor/leaflet.css?v=3">
+<link rel="stylesheet" href="css/main.css?v=3">
+</head>
+<body>
+
+<div id="map"></div>
+<div class="paper-wash"></div>
+
+<!-- 左列 · 水系树 -->
+<nav id="modes">
+  <button class="mode active" data-mode="map">舆图</button><span>·</span>
+  <button class="mode" data-mode="read">循水</button><span>·</span>
+  <button class="mode" data-mode="compare">对照</button><span>·</span>
+  <button class="mode" data-mode="cites">引书</button><span>·</span>
+  <button class="mode" data-mode="stats">计量</button><span>·</span>
+  <button class="mode" data-mode="cross">互文</button><span>·</span>
+  <button class="mode" data-mode="about">关于</button>
+</nav>
+<div id="searchwrap">
+  <input id="search" type="text" placeholder="检全书四十卷——水名·地名·引书，如 汾水 / 潼关 / 山海经" autocomplete="off">
+  <div id="sresults"></div>
+</div>
+<aside id="rail">
+  <div class="rt" id="railtitle">水系纲目<small id="railsub">水道百有十二</small></div>
+  <div id="raillist"></div>
+</aside>
+
+<!-- 右幅 · 面板（详情 / 循水阅读 / 引书 / 计量 / 互文 / 关于） -->
+<section id="panel">
+  <button id="pclose" title="收起">✕</button>
+  <div class="vtitle"><div class="vname" id="vname"></div><div class="vseal" id="vseal">水经</div></div>
+  <div id="pmeta"></div>
+  <div id="pbody"></div>
+</section>
+
+<div id="readerbar" class="hidden">
+  <button id="rprev" title="上一锚点">◀ 经</button>
+  <div id="rprog">循水而读</div>
+  <button id="rnext" title="下一锚点">注 ▶</button>
+  <button id="rjingzhu" title="经文 / 注文 / 并排">经注</button>
+</div>
+
+<footer id="fbar">
+  <button class="ftool" id="wanderlink" title="随机择一水道游历">⚑ 漫游</button>
+  <button class="ftool" id="exportlink" title="导出 GeoJSON / KML / CSV">⬇ 导出</button>
+  <span class="sep"></span><span id="modelabel">舆图</span><span class="sep"></span>
+  <span id="modenote">百十二水 · 沿岸县邑见于图</span>
+  <span class="sep"></span><span class="fb" id="bookstat"></span>
+  <div class="right"><span id="swstate" title="Service Worker 就绪后：全书与已览瓦片离线可用" style="display:none"></span><span>文本 · 国学导航</span><span>底图 · Esri World Physical</span></div>
+</footer>
+
+<!-- 序幕 -->
+<div id="boot">
+  <div class="bt">
+    <div class="seal-row"><span class="bseal">郦</span><span class="bseal b2">注</span></div>
+    <h1>水道经纬</h1>
+    <p class="sub">北魏 · 郦道元《水经注》四十卷 · 一百一十二条水道</p>
+    <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="quote">「天下之多者水也，浮天载地，高下无所不至，万物无所不润。」</p>
+    <button class="go">入 图</button>
+    <p class="hint">循水而读 · 经注对勘 · 引书考古 · 古今对照</p>
+  </div>
+</div>
+
+<script src="vendor/leaflet.js"></script>
+<script src="data/river_data.js?v=3"></script>
+<script src="data/citations.js?v=3"></script>
+<script src="data/crossref.js?v=3"></script>
+<script src="js/config.js?v=3"></script>
+<script src="js/map.js?v=3"></script>
+<script src="js/tree.js?v=3"></script>
+<script src="js/reader.js?v=3"></script>
+<script src="js/search.js?v=3"></script>
+<script src="js/citespanel.js?v=3"></script>
+<script src="js/stats.js?v=3"></script>
+<script src="js/crosspanel.js?v=3"></script>
+<script src="js/exporter.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
+</body>
+</html>

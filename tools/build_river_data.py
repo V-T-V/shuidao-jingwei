@@ -36,6 +36,76 @@ def offset_side(lat, lng, side):
     return [round(lat + dlat, 4), round(lng + dlng, 4)]
 
 
+def seg_int(p1, p2, p3, p4):
+    """两线段真相交（含参数边界收缩，排除共端点）"""
+    d1x, d1y = p2[0] - p1[0], p2[1] - p1[1]
+    d2x, d2y = p4[0] - p3[0], p4[1] - p3[1]
+    den = d1x * d2y - d1y * d2x
+    if abs(den) < 1e-12:
+        return False
+    t1 = ((p3[0] - p1[0]) * d2y - (p3[1] - p1[1]) * d2x) / den
+    t2 = ((p3[0] - p1[0]) * d1y - (p3[1] - p1[1]) * d1x) / den
+    return 0.001 < t1 < 0.999 and 0.001 < t2 < 0.999
+
+
+MYTHIC_SOURCES = {"昆仑", "积石"}   # 河水卷一神话地理：作源标不入折线
+
+
+def count_cross(path):
+    n = 0
+    for i in range(len(path) - 1):
+        for j in range(i + 2, len(path) - 1):
+            if seg_int(path[i], path[i + 1], path[j], path[j + 1]):
+                n += 1
+    return n
+
+
+def uncross(path, wps):
+    """两段治理：
+    1) 方位偏移试探：逐点加偏移，若与近邻段（±3）相交则放弃该偏移；
+    2) 2-opt 反折：交叉段 i/j 之间逆序，仅当不新增交叉且路径长度增幅 <30%。"""
+    n = len(path)
+    # 偏移试探
+    for i, wp in enumerate(wps):
+        if not wp.get("off"):
+            continue
+        old = path[i]
+        path[i] = wp["off"]
+        bad = False
+        for a in range(max(0, i - 3), min(n - 1, i + 3)):
+            for b in range(a + 2, min(n - 1, i + 4)):
+                if seg_int(path[a], path[a + 1], path[b], path[b + 1]):
+                    bad = True
+                    break
+            if bad:
+                break
+        if bad:
+            path[i] = old
+    # 2-opt 反折（最多 6 轮；wps 与 path 同步反序）
+    def path_len(p):
+        return sum(dist_km(p[k], p[k + 1]) for k in range(len(p) - 1))
+    for _ in range(6):
+        did = False
+        base_cross = count_cross(path)
+        if base_cross == 0:
+            break
+        for i in range(len(path) - 1):
+            for j in range(i + 2, len(path) - 1):
+                if not seg_int(path[i], path[i + 1], path[j], path[j + 1]):
+                    continue
+                cand = path[:i + 1] + path[i + 1:j + 1][::-1] + path[j + 1:]
+                if count_cross(cand) < base_cross and path_len(cand) < path_len(path) * 1.3:
+                    path = cand
+                    wps[:] = wps[:i + 1] + wps[i + 1:j + 1][::-1] + wps[j + 1:]
+                    did = True
+                    break
+            if did:
+                break
+        if not did:
+            break
+    return path
+
+
 def dist_km(a, b):
     R = 6371.0
     la1, lo1, la2, lo2 = map(math.radians, [a[0], a[1], b[0], b[1]])
@@ -73,29 +143,51 @@ def main():
     # ── 逐水解析航点 → 折线 ──
     waterways = []
     wp_total = wp_resolved = 0
+    total_cross = 0
     for m in merged:
         path, waypoints = [], []
         jumps = 0
+        anchor_base = 0   # 跨卷合并时 jingIdx 平移为全局锚序
         for sec in m["sections"]:
             for w in sec["waypoints"]:
                 wp_total += 1
                 rr = resolve(w["name"], coords)
                 wp = {"name": w["name"], "kind": w["kind"], "side": w.get("side", ""),
-                      "jingIdx": w["jing_idx"], "vol": int(sec["vol"])}
+                      "jingIdx": w["jing_idx"] + anchor_base, "vol": int(sec["vol"])}
                 if w.get("source"):
                     wp["source"] = True
                 if rr:
                     wp_resolved += 1
                     base = [rr[0], rr[1]]
-                    wp["pos"] = offset_side(base[0], base[1], w.get("side", ""))
+                    wp["pos"] = [round(base[0], 4), round(base[1], 4)]
+                    if w.get("side"):
+                        wp["off"] = offset_side(base[0], base[1], w.get("side", ""))
                     wp["near"] = rr[2]
-                    if path and dist_km(path[-1], wp["pos"]) > 200:
-                        wp["jump"] = True
-                        jumps += 1
-                    path.append(wp["pos"])
+                    if w["name"] in MYTHIC_SOURCES:
+                        wp["mythic"] = True     # 神话地理：源标不入折线
+                    else:
+                        path.append(wp["pos"])
                 waypoints.append(wp)
-        # 支流（去重保序）
+            anchor_base += len(sec["jing"])
+        # 反交叉（试探偏移）+ 跳段检测（终版折线上）
+        pos_wps = [wp for wp in waypoints if "pos" in wp and not wp.get("mythic")]
+        path = uncross(path, pos_wps)
+        jumps = 0
+        for k in range(1, len(path)):
+            if dist_km(path[k - 1], path[k]) > 200:
+                pos_wps[k]["jump"] = True
+                jumps += 1
+        for wp in waypoints:
+            wp.pop("off", None)
+        n_cross = 0
+        for i in range(len(path) - 1):
+            for j in range(i + 2, len(path) - 1):
+                if seg_int(path[i], path[i + 1], path[j], path[j + 1]):
+                    n_cross += 1
+        total_cross += n_cross
+        # 支流（去重保序；jingIdx 同步平移）
         tribs, seen = [], set()
+        anchor_base = 0
         for sec in m["sections"]:
             for t in sec["tributaries"]:
                 key = t["name"] + t["kind"]
@@ -104,7 +196,8 @@ def main():
                 seen.add(key)
                 tribs.append({"name": t["name"], "kind": t["kind"],
                               "dir": t.get("dir", ""), "src": t.get("src", "jing"),
-                              "jingIdx": t.get("jing_idx", -1)})
+                              "jingIdx": t.get("jing_idx", -1) + anchor_base})
+            anchor_base += len(sec["jing"])
         terminal = next((s["terminal"] for s in reversed(m["sections"]) if s["terminal"]), None)
         stats = {
             "chars": sum(s["stats"]["chars"] for s in m["sections"]),
@@ -115,6 +208,7 @@ def main():
             "legendHits": sum(s["stats"]["legend_hits"] for s in m["sections"]),
             "hydroHits": sum(s["stats"]["hydro_hits"] for s in m["sections"]),
             "jumps": jumps,
+            "crossings": n_cross,
         }
         # 终点坐标（若有）
         if terminal:
@@ -171,6 +265,7 @@ def main():
         "wpTotal": wp_total, "wpResolved": wp_resolved,
         "coverage": round(wp_resolved / max(wp_total, 1) * 100, 1),
         "citationKinds": len(citations["counts"]),
+        "crossings": total_cross,
     }
 
     out = {"meta": meta, "tree": tree_meta, "waterways": waterways}
@@ -189,7 +284,11 @@ def main():
             body.append({"j": j["text"], "z": blk})
         tail = [b["text"] for b in r["blocks"] if b["after"] == -1]
         if tail:
-            body.insert(0, {"j": "", "z": tail})
+            # 篇前注文挂到首锚（保持锚序与 jingIdx 对齐）
+            if body:
+                body[0]["z"] = tail + body[0]["z"]
+            else:
+                body.append({"j": "（篇前）", "z": tail})
         secs[r["id"]] = {"name": r["name"], "vol": int(r["vol"]), "body": body}
     with open(os.path.join(DATA, "sections.js"), "w", encoding="utf-8") as f:
         f.write("/* 水道经纬 · 循水阅读文本 · build_river_data.py 生成 */\n")
