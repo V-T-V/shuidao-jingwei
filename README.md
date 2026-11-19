@@ -5,7 +5,7 @@
 
 ```
 水道经纬/
-  index.html            # 单页七模式：舆图 · 循水 · 对照 · 引书 · 计量 · 互文 · 关于
+  index.html · 3d.html  # 七模式舆图 + 三维形胜（MapLibre 地形 + 河流线）
   data/river_data.js    # 112 条水道（折线/航点/支流拓扑/统计）· 管线生成
   data/sections.js      # 循水阅读文本（经注分离 · 1.1MB 懒加载）
   data/text/j01..j40.js # 全文检索层（懒加载）
@@ -25,7 +25,8 @@ python tools/parse_rivers.py      # Phase 1 经注分离 + 航点/支流
 python tools/build_river_data.py  # Phase 2 折线 + 前端产物
 python tools/build_crossref.py    # 互文快照（需方舆经纬语料）
 python tools/build_analysis.py    # docs/ANALYSIS.md
-python run_tests.py               # lint 115 项 + 数据断言
+python tools/build_paper_pdf.py   # 研究论文 PDF（docs/水道经纬-*.pdf，lint 哨兵联动）
+python run_tests.py               # lint 119 项 + 数据断言
 ```
 
 ## 核心体验
@@ -39,13 +40,15 @@ python run_tests.py               # lint 115 项 + 数据断言
 | 5 | **互文**——顾祖禹 940 引的省域分布与常并提水名 | 「互文」 |
 | 6 | **计量**——注意力/传说密度/水文词/南北不对称 | 「计量」 |
 | 7 | 全文检索（Worker）· 经注三态对照 · GeoJSON/KML/CSV 导出 · PWA 三级缓存离线 | 顶栏/底栏 |
+| 8 | **三维形胜**——真地形上观江河（terrarium DEM · idle 门控防竞态）· 点线循水 | 底栏「⛰ 形胜」 |
+| 9 | Catmull-Rom 平滑 ↔ 航点实录直线（数据诚实由圆点承载） | 底栏「≈ 平滑」 |
 
 ## 数据边界（诚实口径）
 
 - 文本：国学导航本（GB18030），校勘不在范围
 - 经注分离：规则法（方法 A），经文 7,442 字（学界 7,000±1,000 内）
 - 坐标：人工考据近似（±20km 级），航点覆盖 88.9%；「昆仑」等神话源标记 mythic 不入折线
-- 折线：直线段 + 方位偏移试探 + 2-opt 去交叉（基线 4 处，lint 防退化）
+- 折线：直线段实录 + 可选 Catmull-Rom 平滑；方位偏移试探 + 2-opt 去交叉（基线 4 处，lint 防退化）
 - 水道计数：112 条分节水道 + 147 条支流边（与陈桥驿 1,252 口径差异见 ANALYSIS.md §7）
 
 ## 版本

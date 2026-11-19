@@ -1,0 +1,37 @@
+# 水道经纬 · 周六自动审计（承方舆经纬 audit.yml——本地建档不激活，push 后生效）
+name: audit
+on:
+  schedule:
+    - cron: "30 1 * * 6"   # 周六 09:30 CST
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: lint（115+ 项确定性检查）
+        run: python tools/lint.py
+      - name: 数据断言（lint + 哨兵 + 互文快照）
+        run: python - <<'EOF'
+        import json, io, os, subprocess, sys
+        ROOT = os.getcwd()
+        riv = json.load(io.open("data/intermediate/rivers.json", encoding="utf-8"))
+        m = riv["meta"]
+        assert m["water_sections"] >= 100 and m["total_waypoints"] >= 500
+        assert 6500 <= m["jing_chars"] <= 8200
+        t = io.open("data/river_data.js", encoding="utf-8").read()
+        sjz = json.loads(t[t.find("const SJZ = ")+len("const SJZ = "):].rstrip().rstrip(";"))
+        assert sjz["meta"]["coverage"] >= 60 and sjz["meta"]["crossings"] <= 4
+        x = io.open("data/crossref.js", encoding="utf-8").read()
+        assert '"total":940' in x.replace(" ", "") or '"total":940' in x
+        print("哨兵全过：", sjz["meta"])
+        EOF
+      - name: 回归入口（浏览器断言页须在有头环境人工/截图验看，CI 只跑确定性子集）
+        run: python run_tests.py

@@ -10,7 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def bump(old: str, new: str):
-    targets = ["index.html", "sw.js"] + [
+    targets = ["index.html", "3d.html", "sw.js"] + [
         os.path.join("js", f) for f in os.listdir(os.path.join(ROOT, "js"))
         if f.endswith(".js")
     ]

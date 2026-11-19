@@ -102,6 +102,20 @@ def main():
     for icon in re.findall(r'"src":\s*"(icons/[^"]+)"', mani):
         ok(os.path.exists(os.path.join(ROOT, icon)), f"manifest 引用图标缺失: {icon}")
 
+    # ── 9 3D 页引用一致（index 底栏入口 ↔ 3d.html 存在；版本同流） ──
+    ok(os.path.exists(os.path.join(ROOT, "3d.html")), "3d.html 缺失（index 底栏形胜入口指向它）")
+    d3 = read("3d.html") if os.path.exists(os.path.join(ROOT, "3d.html")) else ""
+    ok("tdlink" in idx, "index.html 缺 3D 入口（#tdlink）")
+    for bad in set(re.findall(r"\?v=(\d+)", d3)):
+        ok(bad == ver, f"3d.html 含过期版本 ?v={bad}（当前 v{ver}）")
+
+    # ── 10 论文哨兵：改 ANALYSIS.md / 管线产物后必须重排 PDF ──
+    ap = os.path.join(ROOT, "docs", "ANALYSIS.md")
+    pdf = os.path.join(ROOT, "docs", "水道经纬-水道网络与引书考古.pdf")
+    if os.path.exists(ap) and os.path.exists(pdf):
+        ok(os.path.getmtime(pdf) >= os.path.getmtime(ap),
+           "docs/ANALYSIS.md 晚于论文 PDF——请重跑 python tools/build_paper_pdf.py")
+
     # ── 报告 ──
     print(f"lint：{checks} 项检查")
     if fails:

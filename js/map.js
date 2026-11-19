@@ -37,6 +37,27 @@ const SJMAP = (() => {
 
   const lineWeight = w => Math.max(1.6, Math.min(6, Math.sqrt(w.stats.zhuChars / 2600)));
   const colorOf = w => BASIN_COLORS[w.name] || "#2f5d70";
+  let smoothing = false;
+
+  /* Catmull-Rom 平滑（方案 2.3 进阶项）：航点折线 → 曲线细分；
+     数据诚实由航点圆点承载——线为插值，点为实录 */
+  function smoothPath(pts, seg = 6) {
+    if (pts.length < 3 || !smoothing) return pts;
+    const out = [];
+    const P = i => pts[Math.max(0, Math.min(pts.length - 1, i))];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+      for (let t = 0; t < seg; t++) {
+        const s = t / seg, s2 = s * s, s3 = s2 * s;
+        out.push([
+          .5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * s + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * s2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * s3),
+          .5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * s + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * s2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * s3),
+        ]);
+      }
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
+  }
 
   /* ── 水道折线 + 航点 ─────────────────────────────── */
   function render() {
@@ -44,7 +65,7 @@ const SJMAP = (() => {
     SJZ.waterways.forEach(w => {
       if (!w.path || w.path.length < 2) return;
       const sel = w.id === selId;
-      const line = L.polyline(w.path, {
+      const line = L.polyline(smoothPath(w.path), {
         className: "rivline",
         color: sel ? "#b23a2e" : colorOf(w),
         weight: sel ? lineWeight(w) + 2.4 : lineWeight(w),
@@ -140,6 +161,8 @@ const SJMAP = (() => {
     set onSelect(fn) { onSelect = fn; },
     set onWpClick(fn) { onWpClick = fn; },
     get selected() { return selId; },
+    toggleSmooth() { smoothing = !smoothing; render(); return smoothing; },
+    get smoothing() { return smoothing; },
   };
 })();
 window.SJMAP = SJMAP;

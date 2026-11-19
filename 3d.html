@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>水道经纬 · 三维形胜</title>
+<link rel="stylesheet" href="vendor/maplibre-gl.css?v=4">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#232b30;--ink-mid:#4c5a61;--wave:#2f5d70;--wave-d:#24495a;--silk-3:#f3f0e0;--line:rgba(60,72,80,.34)}
+html,body{height:100%;overflow:hidden}
+body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;color:var(--ink)}
+#m3d{position:fixed;inset:0}
+#top{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;
+  padding:12px 18px;pointer-events:none}
+#top .brand{pointer-events:auto;font-size:17px;letter-spacing:5px;color:var(--silk-3);
+  background:rgba(36,73,90,.82);padding:6px 16px;border:1px solid rgba(243,240,224,.3)}
+#top .back{pointer-events:auto;font-family:inherit;font-size:13px;letter-spacing:2px;cursor:pointer;
+  color:var(--silk-3);background:rgba(36,73,90,.82);border:1px solid rgba(243,240,224,.3);padding:6px 14px}
+#top .back:hover{background:var(--wave-d)}
+#pick{position:fixed;top:64px;right:18px;z-index:5;width:210px;max-height:60vh;overflow:auto;
+  background:rgba(243,240,224,.94);border:1px solid var(--line);padding:8px}
+#pick h4{font-weight:400;font-size:12px;letter-spacing:3px;color:var(--wave-d);margin-bottom:6px}
+#pick .r{display:flex;justify-content:space-between;font-size:12px;padding:3px 6px;cursor:pointer;color:var(--ink-mid)}
+#pick .r:hover{background:rgba(47,93,112,.12);color:var(--wave-d)}
+#demnote{display:none;position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:11;
+  font-size:12px;letter-spacing:2px;color:var(--silk-3);background:rgba(142,43,34,.9);
+  padding:6px 14px;border-radius:2px;cursor:pointer}
+#hint{position:fixed;left:18px;bottom:14px;z-index:5;font-size:11px;letter-spacing:2px;color:rgba(243,240,224,.85);
+  background:rgba(36,73,90,.6);padding:5px 12px}
+.maplibregl-popup-content{font-family:inherit!important;font-size:13px;letter-spacing:1px;
+  background:var(--silk-3)!important;color:var(--ink)!important}
+.maplibregl-popup-content b{color:var(--wave-d);font-weight:400;font-size:15px}
+.maplibregl-popup-content a{color:var(--cinnabar,#b23a2e);text-decoration:none;border-bottom:1px dotted}
+</style>
+</head>
+<body>
+<div id="m3d"></div>
+<div id="top">
+  <div class="brand">三维形胜 · 水道经纬</div>
+  <button class="back" onclick="location.href='index.html?v=4'">◂ 返回舆图</button>
+</div>
+<div id="pick"><h4>飞抵水道</h4><div id="plist"></div></div>
+<div id="demnote">高程数据不可用 · 已降为平面显示</div>
+<div id="hint">拖拽旋转 · 右键俯仰 · 滚轮缩放 · 点河流线循水而读</div>
+
+<script src="vendor/maplibre-gl.js?v=4"></script>
+<script src="data/river_data.js?v=4"></script>
+<script>
+(() => {
+  const colors = { "河水":"#3d8ec4","汾水":"#4a7a9b","济水":"#2f8c7a","渭水":"#57805f","洛水":"#57805f",
+    "沔水":"#2f5d70","江水":"#1f6e8c","淮水":"#4a7a9b","汝水":"#5d8aa0","颍水":"#5d8aa0",
+    "泗水":"#4f7d5c","沂水":"#5f8d6a","沭水":"#5f8d6a","湘水":"#33658a","资水":"#44719b",
+    "沅水":"#33658a","澧水":"#44719b","赣水":"#3d7a72","渐江水":"#4a6d8c","温水":"#4f7d8a" };
+  const fc = () => ({ type: "FeatureCollection", features: SJZ.waterways
+    .filter(w => w.path.length > 1)
+    .map(w => ({ type: "Feature",
+      properties: { id: w.id, name: w.name, chars: w.stats.zhuChars,
+                    color: colors[w.name] || "#2f5d70" },
+      geometry: { type: "LineString", coordinates: w.path.map(p => [p[1], p[0]]) } })) });
+
+  const m3 = new maplibregl.Map({
+    container: "m3d",
+    attributionControl: false,
+    center: [106.5, 36.5], zoom: 3.1, pitch: 38, bearing: -18,
+    minZoom: 2.6, maxZoom: 13, maxPitch: 80,
+    antialias: true, fadeDuration: 0, refreshExpiredTiles: false,
+    maxParallelImageRequests: 16,
+    style: {
+      version: 8,
+      sources: {
+        img: { type: "raster", tiles: [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        ], tileSize: 256, maxzoom: 12 },
+        dem: { type: "raster-dem", tiles: [
+          "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+        ], encoding: "terrarium", tileSize: 256, maxzoom: 12 },
+        rivers: { type: "geojson", data: fc() },
+      },
+      layers: [
+        { id: "bg", type: "background", paint: { "background-color": "#16262c" } },
+        { id: "img", type: "raster", source: "img", paint: { "raster-opacity": .92 } },
+        { id: "hill", type: "hillshade", source: "dem",
+          paint: { "hillshade-exaggeration": .45, "hillshade-shadow-color": "#0e1c22",
+                   "hillshade-highlight-color": "#dfe8d8", "hillshade-accent-color": "#3a6a7a" } },
+        { id: "riversGlow", type: "line", source: "rivers",
+          paint: { "line-color": ["get", "color"], "line-width":
+            ["interpolate", ["linear"], ["zoom"], 4, 2.4, 8, 6, 12, 12],
+            "line-opacity": .35, "line-blur": 2 } },
+        { id: "rivers", type: "line", source: "rivers",
+          paint: { "line-color": ["get", "color"], "line-width":
+            ["interpolate", ["linear"], ["zoom"], 4, 1.1, 8, 2.8, 12, 6],
+            "line-opacity": .9 } },
+      ],
+    },
+  });
+  m3.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
+  window.__m3 = m3;
+
+  /* 地形不得挂上飞行中的镜头（MapLibre v4.7.1 _prepareElevation 竞态——
+     方舆经纬 v121 教训：镜头在飞就等 idle 再挂，异常源头即消失） */
+  const demAttach = () => {
+    if (window.__m3terrain) return;
+    if (m3.isMoving()) { m3.once("idle", demAttach); return; }
+    m3.setTerrain({ source: "dem", exaggeration: 1.4 });
+    window.__m3terrain = true;
+  };
+  const demProbe = fetch("https://s3.amazonaws.com/elevation-tiles-prod/terrarium/6/32/15.png",
+    { signal: AbortSignal.timeout(5000) })
+    .then(r => r.ok).catch(() => false);
+  m3.on("load", () => {
+    demProbe.then(ok => {
+      if (ok) { demAttach(); return; }
+      const chip = document.getElementById("demnote");
+      chip.style.display = "block";
+      chip.onclick = () => {
+        chip.style.display = "none";
+        fetch("https://s3.amazonaws.com/elevation-tiles-prod/terrarium/6/32/15.png",
+              { signal: AbortSignal.timeout(4000) })
+          .then(r => { if (r.ok) demAttach(); })
+          .catch(() => { chip.style.display = "block"; });
+      };
+    });
+  });
+
+  /* 点击水道 → 弹窗循水入口 */
+  m3.on("click", "rivers", e => {
+    const f = e.features[0];
+    new maplibregl.Popup({ offset: 8 })
+      .setLngLat(e.lngLat)
+      .setHTML(`<b>${f.properties.name}</b><br>注文 ${f.properties.chars.toLocaleString()} 字<br>` +
+               `<a href="index.html?v=4#r=${f.properties.id}">▸ 循水而读</a>`)
+      .addTo(m3);
+  });
+  m3.on("mouseenter", "rivers", () => { m3.getCanvas().style.cursor = "pointer"; });
+  m3.on("mouseleave", "rivers", () => { m3.getCanvas().style.cursor = ""; });
+
+  /* 侧列：飞抵水道 */
+  const plist = document.getElementById("plist");
+  [...SJZ.waterways].sort((a, b) => b.stats.zhuChars - a.stats.zhuChars).slice(0, 30).forEach(w => {
+    if (w.path.length < 2) return;
+    const el = document.createElement("div");
+    el.className = "r";
+    el.innerHTML = `<span>${w.name}</span><span>${(w.stats.zhuChars / 1000).toFixed(1)}k</span>`;
+    el.onclick = () => {
+      const lons = w.path.map(p => p[1]), lats = w.path.map(p => p[0]);
+      const c = [(Math.min(...lons) + Math.max(...lons)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
+      m3.flyTo({ center: c, zoom: Math.min(7.5, 4 + 900 / Math.max(...lons.map(Math.abs)) * 10), pitch: 55, duration: 2.4 });
+    };
+    plist.appendChild(el);
+  });
+})();
+</script>
+</body>
+</html>
