@@ -40,8 +40,13 @@ body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;col
   <div class="brand">三维形胜 · 水道经纬</div>
   <button class="back" onclick="location.href='index.html?v=5'">◂ 返回舆图</button>
 </div>
-<div id="pick"><h4>飞抵水道</h4><div id="plist"></div></div>
+<div id="pick"><h4>循水飞行</h4><div id="plist"></div></div>
 <div id="demnote">高程数据不可用 · 已降为平面显示</div>
+<div id="flyctl" style="display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:6;align-items:center">
+  <button id="flystop" style="font-family:inherit;font-size:13px;letter-spacing:3px;cursor:pointer;
+    color:#f3f0e0;background:rgba(178,58,34,.88);border:1px solid rgba(243,240,224,.4);padding:7px 22px">■ 停止循飞</button>
+  <span id="flyname" style="margin-left:10px;font-size:13px;letter-spacing:2px;color:#f3f0e0"></span>
+</div>
 <div id="hint">拖拽旋转 · 右键俯仰 · 滚轮缩放 · 点河流线循水而读</div>
 
 <script src="vendor/maplibre-gl.js?v=5"></script>
@@ -135,18 +140,53 @@ body{font-family:"FangSong","STFangsong","仿宋","Songti SC","SimSun",serif;col
   m3.on("mouseenter", "rivers", () => { m3.getCanvas().style.cursor = "pointer"; });
   m3.on("mouseleave", "rivers", () => { m3.getCanvas().style.cursor = ""; });
 
-  /* 侧列：飞抵水道 */
+  /* ── 循水飞行：镜头沿岸逐点推进（源→委）；拖拽即停 ── */
+  let flying = false;
+  const flyctl = document.getElementById("flyctl");
+  const flyname = document.getElementById("flyname");
+  async function flyAlong(w) {
+    if (flying) { flying = false; await new Promise(r => setTimeout(r, 200)); }
+    flying = true;
+    flyctl.style.display = "flex";
+    flyname.textContent = `${w.name} · 源 → 委`;
+    const step = Math.max(1, Math.floor(w.path.length / 26));
+    const pts = w.path.filter((_, i) => i % step === 0 || i === w.path.length - 1);
+    const zoom = w.path.length > 30 ? 6.6 : 7.4;
+    // 首点镜头先行；动画能力探测：easeTo 无效（rAF 节流环境）则退 jumpTo 逐点推进
+    let animated = false;
+    if (m3.isStyleLoaded()) {
+      const c0 = m3.getCenter().lng;
+      m3.easeTo({ center: [pts[0][1], pts[0][0]], zoom, pitch: 52, duration: 900 });
+      await new Promise(r => setTimeout(r, 1100));
+      animated = Math.abs(m3.getCenter().lng - c0) > Math.abs(pts[0][1] - c0) * .5 + .01;
+    }
+    if (!animated) m3.jumpTo({ center: [pts[0][1], pts[0][0]], zoom, pitch: 52, bearing: -12 });
+    for (let i = 1; i < pts.length && flying; i++) {
+      await new Promise(ok => {
+        if (animated) {
+          const done = () => { m3.off("moveend", done); ok(); };
+          m3.once("moveend", done);
+          m3.easeTo({ center: [pts[i][1], pts[i][0]], zoom, pitch: 52, bearing: -12, duration: 950 });
+          setTimeout(done, 1600);   // moveend 兜底（地形加载中可能迟发）
+        } else {
+          setTimeout(() => { try { m3.jumpTo({ center: [pts[i][1], pts[i][0]], zoom, pitch: 52, bearing: -12 }); } catch (e) {} ok(); }, 750);
+        }
+      });
+    }
+    flying = false;
+    flyctl.style.display = "none";
+  }
+  document.getElementById("flystop").onclick = () => { flying = false; flyctl.style.display = "none"; };
+  m3.on("dragstart", () => { flying = false; flyctl.style.display = "none"; });
+
+  /* 侧列：点击即循水飞行 */
   const plist = document.getElementById("plist");
   [...SJZ.waterways].sort((a, b) => b.stats.zhuChars - a.stats.zhuChars).slice(0, 30).forEach(w => {
     if (w.path.length < 2) return;
     const el = document.createElement("div");
     el.className = "r";
     el.innerHTML = `<span>${w.name}</span><span>${(w.stats.zhuChars / 1000).toFixed(1)}k</span>`;
-    el.onclick = () => {
-      const lons = w.path.map(p => p[1]), lats = w.path.map(p => p[0]);
-      const c = [(Math.min(...lons) + Math.max(...lons)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
-      m3.flyTo({ center: c, zoom: Math.min(7.5, 4 + 900 / Math.max(...lons.map(Math.abs)) * 10), pitch: 55, duration: 2.4 });
-    };
+    el.onclick = () => flyAlong(w);
     plist.appendChild(el);
   });
 })();
