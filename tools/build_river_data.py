@@ -294,10 +294,30 @@ def main():
         f.write("/* 水道经纬 · 循水阅读文本 · build_river_data.py 生成 */\n")
         f.write("const SJZ_SECTIONS = " + json.dumps(secs, ensure_ascii=False, separators=(",", ":")) + ";\n")
 
-    # ── citations.js ──
+    # ── citations.js（计数+分布，随壳常载）· cites_quotes.js（引文全文，面板懒加载）──
     with open(os.path.join(DATA, "citations.js"), "w", encoding="utf-8") as f:
         f.write("/* 水道经纬 · 引书考古数据库 · build_river_data.py 生成 */\n")
-        f.write("const SJZ_CITES = " + json.dumps(citations, ensure_ascii=False, separators=(",", ":")) + ";\n")
+        f.write("const SJZ_CITES = " + json.dumps(
+            {"counts": citations["counts"], "where": citations["where"]},
+            ensure_ascii=False, separators=(",", ":")) + ";\n")
+    quotes = citations.get("quotes", {})
+    with open(os.path.join(DATA, "cites_quotes.js"), "w", encoding="utf-8") as f:
+        f.write("/* 水道经纬 · 引文辑录全文（懒加载）· build_river_data.py 生成 */\n")
+        f.write("window.SJZ_QUOTES = " + json.dumps(quotes, ensure_ascii=False, separators=(",", ":")) + ";\n")
+
+    # ── inventory.js（水名录 · 懒加载）：名 → 次数/首见/类别（分节|支流|仅见）──
+    inv = json.load(open(os.path.join(INT, "inventory.json"), encoding="utf-8"))
+    section_names = {r["name"] for r in rivers if r["type"] == "water"}
+    trib_names = {t["name"] for r in rivers for t in r["tributaries"]}
+    inv_out = {}
+    for name, n in inv["counts"].items():
+        if n < 2 or len(name) < 2:
+            continue
+        kind = "分节" if name in section_names else ("支流" if name in trib_names else "仅见")
+        inv_out[name] = {"n": n, "first": inv["first_seen"].get(name, ""), "kind": kind}
+    with open(os.path.join(DATA, "inventory.js"), "w", encoding="utf-8") as f:
+        f.write("/* 水道经纬 · 水名录全书清单（懒加载）· build_river_data.py 生成 */\n")
+        f.write("window.SJZ_INV = " + json.dumps(inv_out, ensure_ascii=False, separators=(",", ":")) + ";\n")
 
     # ── 全文懒加载（检索层，按卷）──
     os.makedirs(os.path.join(DATA, "text"), exist_ok=True)

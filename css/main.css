@@ -136,7 +136,23 @@ body{
 .kv{font-size:13px;line-height:2;color:var(--ink-mid)}
 .kv b{color:var(--cinnabar-d);font-weight:400}
 
-/* 引文辑录卡 */
+/* 引文辑录卡（扩容滚动容器） */
+.quotes-box{max-height:44vh;overflow:auto;margin-bottom:6px}
+.quotes-box::-webkit-scrollbar{width:5px}
+.quotes-box::-webkit-scrollbar-thumb{background:rgba(47,93,112,.3)}
+
+/* 水名录 */
+.inv-filter{width:100%;font-family:inherit;font-size:13px;letter-spacing:1px;color:var(--ink);
+  background:rgba(243,240,224,.9);border:1px solid var(--line);padding:7px 10px;outline:none;margin-bottom:8px}
+body.night .inv-filter{background:rgba(26,33,36,.9)}
+.inv-row{display:flex;align-items:center;gap:8px;padding:3px 6px;font-size:12.5px;cursor:pointer;
+  color:var(--ink-mid);border-bottom:1px dotted rgba(60,72,80,.18)}
+.inv-row:hover{background:rgba(47,93,112,.1);color:var(--wave-d)}
+.inv-row .in{width:74px;flex:none;letter-spacing:1px}
+.inv-row .ik{flex:none;font-size:9.5px;letter-spacing:1px;padding:1px 6px;border:1px solid var(--line);color:var(--ink-faint)}
+.inv-row .ik.分节{color:var(--cinnabar-d,#b23a2e);border-color:rgba(178,58,46,.4)}
+.inv-row .ik.支流{color:var(--jade-d,#46664f);border-color:rgba(90,131,104,.4)}
+.inv-row .if{margin-left:auto;font-size:10px;color:var(--ink-faint)}
 .quotecard{position:relative;padding:9px 34px 9px 12px;margin:6px 0;font-size:13.5px;line-height:1.85;
   color:var(--ink);background:rgba(47,93,112,.05);border-left:3px solid var(--wave-l);cursor:pointer}
 .quotecard:hover{background:rgba(47,93,112,.12)}

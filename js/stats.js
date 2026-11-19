@@ -18,7 +18,50 @@ const SJSTATS = (() => {
     legendDensity(body);
     hydroWords(body);
     northSouth(body);
+    inventoryList(body);
     document.getElementById("panel").classList.add("open");
+  }
+
+  /* 水名录全书清单（懒加载 data/inventory.js）：754 名 · 分节/支流/仅见 */
+  function inventoryList(body) {
+    const holder = document.createElement("div");
+    body.appendChild(holder);
+    holder.innerHTML = `<div class="sect"><h3>水名录 <span style="font-size:10px;color:var(--ink-faint)">加载中…</span></h3></div>`;
+    const go = () => {
+      if (typeof window.SJZ_INV === "undefined") {
+        holder.innerHTML = `<div class="sect"><h3>水名录</h3><p class="kv">清单未载入（离线首访）。</p></div>`;
+        return;
+      }
+      const inv = Object.entries(window.SJZ_INV).sort((a, b) => b[1].n - a[1].n);
+      holder.innerHTML = `<div class="sect"><h3>水名录 <span style="font-size:10px;color:var(--ink-faint)">` +
+        `全书水名 ${inv.length} · 分节 ${inv.filter(x => x[1].kind === "分节").length} · 支流 ${inv.filter(x => x[1].kind === "支流").length} · 仅见其余</span></h3>` +
+        `<input class="inv-filter" id="invFilter" placeholder="检水名——如 洧 / 潕 / 澧" autocomplete="off">` +
+        `<div id="invList" style="max-height:46vh;overflow:auto"></div></div>`;
+      const listEl = holder.querySelector("#invList");
+      const render = (q) => {
+        const rows = inv.filter(([n]) => !q || n.includes(q)).slice(0, 240);
+        listEl.innerHTML = rows.map(([n, v]) =>
+          `<div class="inv-row" data-n="${n}"><span class="in">${n}</span>` +
+          `<span class="ik ${v.kind}">${v.kind}</span>` +
+          `<span style="font-size:11px;color:var(--ink-mid)">${v.n} 次</span>` +
+          `<span class="if">首见 ${v.first || "?"}</span></div>`).join("") ||
+          `<p class="kv">未得。</p>`;
+        listEl.querySelectorAll(".inv-row").forEach(el =>
+          el.addEventListener("click", () => {
+            const w = SJZ.waterways.find(x => x.name === el.dataset.n);
+            if (w) SJREADER.open(w.id);
+            else SJAPP.searchFor(el.dataset.n);
+          }));
+      };
+      render("");
+      holder.querySelector("#invFilter").addEventListener("input", e => render(e.target.value.trim()));
+    };
+    if (typeof window.SJZ_INV !== "undefined") { go(); return; }
+    const s = document.createElement("script");
+    s.src = "data/inventory.js?v=8";
+    s.onload = go;
+    s.onerror = go;
+    document.head.appendChild(s);
   }
 
   const bar = (label, val, max, w = 260, cls = "hv") =>

@@ -11,6 +11,19 @@ const SJCITES = (() => {
     "秦州记", "沙州记", "凉州记", "西河旧事", "博物记", "舆地志", "元和郡县志",
   ]);
 
+  /* 引文全文懒加载（data/cites_quotes.js，121KB，首开后缓存） */
+  function ensureQuotes() {
+    if (window.SJZ_QUOTES) return Promise.resolve();
+    if (ensureQuotes._p) return ensureQuotes._p;
+    ensureQuotes._p = new Promise(ok => {
+      const s = document.createElement("script");
+      s.src = "data/cites_quotes.js?v=8";
+      s.onload = ok; s.onerror = ok;
+      document.head.appendChild(s);
+    });
+    return ensureQuotes._p;
+  }
+
   function open(book) {
     SJAPP.setMode("cites");
     document.getElementById("vname").textContent = "引书考古";
@@ -20,7 +33,7 @@ const SJCITES = (() => {
       `<span>引书 ${m.citationKinds} 种</span><span>「《书》曰」句式统计</span>` +
       `<span>亡佚者标 †</span>`;
     const body = document.getElementById("pbody");
-    if (book) return showBook(body, book);
+    if (book) return ensureQuotes().then(() => showBook(body, book));
     const counts = Object.entries(SJZ_CITES.counts).sort((a, b) => b[1] - a[1]);
     let html = `<div class="statgrid">
       <div class="statcard"><b>${m.citationKinds}</b><span>引书种类</span></div>
@@ -39,26 +52,26 @@ const SJCITES = (() => {
     点书名看其在哪些水道被引。<b>†</b> 为主要亡佚书例举（非穷尽）。</p>`;
     body.innerHTML = html;
     body.querySelectorAll(".hn").forEach(el =>
-      el.addEventListener("click", () => showBook(body, el.dataset.b)));
+      el.addEventListener("click", () => ensureQuotes().then(() => showBook(body, el.dataset.b))));
     document.getElementById("panel").classList.add("open");
   }
 
   function showBook(body, b) {
     const where = SJZ_CITES.where[b] || {};
     const rivers = Object.entries(where).sort((a, c) => c[1] - a[1]);
-    const quotes = (SJZ_CITES.quotes && SJZ_CITES.quotes[b]) || [];
+    const quotes = (window.SJZ_QUOTES && window.SJZ_QUOTES[b]) || [];
     const max = rivers.length ? rivers[0][1] : 1;
     let html = `<div class="sect"><h3>《${b}》 ${LOST.has(b) ? "†" : ""}</h3>` +
       `<p class="kv">全书被引 <b>${SJZ_CITES.counts[b] || 0}</b> 次 · 分布于 <b>${rivers.length}</b> 条水道` +
       `${quotes.length ? ` · 存世引文样例 <b>${quotes.length}</b> 则` : ""}</p></div>`;
     if (quotes.length) {
-      html += `<div class="sect"><h3>引文辑录 <span style="font-size:10px;color:var(--ink-faint)">——郦注所存此书之文</span></h3>`;
+      html += `<div class="sect"><h3>引文辑录 <span style="font-size:10px;color:var(--ink-faint)">——郦注所存此书之文 · ${quotes.length} 则</span></h3><div class="quotes-box">`;
       quotes.forEach((it, i) => {
         html += `<div class="quotecard" data-q="${i}">` +
           `<span class="qmeta">卷${it.vol} · ${it.water}</span>${it.q}` +
           `<span class="qgo" title="循水至引文出处">↗</span></div>`;
       });
-      html += `</div>`;
+      html += `</div></div>`;
     }
     html += `<div class="sect"><h3>按水道分布</h3>`;
     rivers.slice(0, 30).forEach(([rn, n]) => {

@@ -137,12 +137,56 @@ def main():
   分节 {sjz['meta']['waterways']} 条 + 支流拓扑去重 {len({t['name'] for w in sjz['waterways'] for t in w['tributaries']})} 名
 - 两口径差异属定义差（非缺漏），后续版本以注文水名逐条考据补全
 
-## 八、验证基线
+## 八、古今改道定量（对 Natural Earth 50m 真河线）
 
-- lint {115} 项全绿（tools/lint.py）
+| 古水 | 今水 | 航点数 | 平均偏差 km | 最大偏差 km | >30km 点占比 | 改道段里程 km |
+|---|---|---|---|---|---|---|
+"""
+    import math as _m
+    mt = io.open(os.path.join(ROOT, "data", "modern_rivers.js"), encoding="utf-8").read()
+    modern = json.loads(mt[mt.find("const SJZ_MODERN = ") + len("const SJZ_MODERN = "):].rstrip().rstrip(";"))
+
+    def _pt_seg_km(pt, pts):
+        R = 6371.0
+        xy = lambda p: (R * _m.radians(p[1]) * _m.cos(_m.radians(p[0])), R * _m.radians(p[0]))
+        x, y = xy(pt)
+        best = 1e9
+        for i in range(len(pts) - 1):
+            x1, y1 = xy(pts[i]); x2, y2 = xy(pts[i + 1])
+            dx, dy = x2 - x1, y2 - y1
+            t = max(0, min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy or 1)))
+            best = min(best, _m.hypot(x - (x1 + t * dx), y - (y1 + t * dy)))
+        return best
+
+    def _km(a, b):
+        R = 6371.0
+        la1, lo1, la2, lo2 = _m.radians(a[0]), _m.radians(a[1]), _m.radians(b[0]), _m.radians(b[1])
+        h = _m.sin((la2 - la1) / 2) ** 2 + _m.cos(la1) * _m.cos(la2) * _m.sin((lo2 - lo1) / 2) ** 2
+        return 2 * R * _m.asin(_m.sqrt(h))
+
+    for mres in modern:
+        w = next((x for x in sjz["waterways"] if x["name"] == mres["linkTo"]), None)
+        if not w or len(w["path"]) < 2:
+            continue
+        pts = [p["pos"] for p in w["waypoints"] if p.get("pos") and not p.get("mythic")]
+        if len(pts) < 4:
+            continue
+        devs = [_pt_seg_km(p, mres["pts"]) for p in pts]
+        dev_len = sum(_km(w["path"][i], w["path"][i + 1]) for i in range(len(w["path"]) - 1)
+                      if _pt_seg_km([(w["path"][i][0] + w["path"][i + 1][0]) / 2,
+                                     (w["path"][i][1] + w["path"][i + 1][1]) / 2], mres["pts"]) > 30)
+        md += (f"| {w['name']} | {mres['key']} | {len(pts)} | {sum(devs) / len(devs):.0f} | "
+               f"{max(devs):.0f} | {sum(1 for d in devs if d > 30) / len(pts) * 100:.0f}% | {dev_len:,.0f} |\n")
+    md += """
+> 河水之最大偏差即「河出昆仑」的神话地理（积石以上非今日黄河河道）；江水中下游偏差小——
+> 长江干流千五百年河道基本稳定。改道段里程为古折线中偏差>30km 段的长度合计（近似口径）。
+
+## 九、验证基线
+
+- lint 全绿（tools/lint.py，含论文哨兵）
 - 断言页：tests/assert_data.html（10 项）· tests/assert_reader.html（7 项）全 PASS
-- 折线自交叉基线 {sjz['meta']['crossings']} 处（济水二分节吸收泗水首段 3 + 淇水单字地名 1，lint 防退化）
-- 证据截图：docs/evidence/（map · reader · compare）
+- 折线自交叉基线 """ + str(sjz['meta']['crossings']) + """ 处（济水二分节吸收泗水首段 3 + 淇水单字地名 1，lint 防退化）
+- 证据截图：docs/evidence/（map · reader · compare · split · night · 3d）
 """
     with io.open(os.path.join(ROOT, "docs", "ANALYSIS.md"), "w", encoding="utf-8") as f:
         f.write(md)

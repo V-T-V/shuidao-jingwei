@@ -270,12 +270,12 @@ def main():
                         citation_where.setdefault(b.group(1), {})
                         citation_where[b.group(1)][water_name] = (
                             citation_where[b.group(1)].get(water_name, 0) + 1)
-                    # 引文句捕获（每书 ≤4 条，存水道与卷次出处）
+                    # 引文句捕获（每书 ≤20 条，存水道与卷次出处）
                     for q in RE_CITE_QUOTE.finditer(s):
                         bk = q.group(1)
                         qs = citation_quotes.setdefault(bk, [])
                         text = q.group(2).lstrip("：，、； ")
-                        if len(qs) < 4 and not any(x["q"] == text for x in qs):
+                        if len(qs) < 20 and not any(x["q"] == text for x in qs):
                             qs.append({"q": text, "water": water_name, "vol": vol})
                     # 注文支流：句首水名 + 句尾注之/入焉 → 汇入当前水
                     for m4 in RE_ZHU_TRIB.finditer(s):
