@@ -16,22 +16,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: lint（115+ 项确定性检查）
+      - name: lint（确定性检查全量）
         run: python tools/lint.py
-      - name: 数据断言（lint + 哨兵 + 互文快照）
-        run: python - <<'EOF'
-        import json, io, os, subprocess, sys
-        ROOT = os.getcwd()
-        riv = json.load(io.open("data/intermediate/rivers.json", encoding="utf-8"))
-        m = riv["meta"]
-        assert m["water_sections"] >= 100 and m["total_waypoints"] >= 500
-        assert 6500 <= m["jing_chars"] <= 8200
-        t = io.open("data/river_data.js", encoding="utf-8").read()
-        sjz = json.loads(t[t.find("const SJZ = ")+len("const SJZ = "):].rstrip().rstrip(";"))
-        assert sjz["meta"]["coverage"] >= 60 and sjz["meta"]["crossings"] <= 4
-        x = io.open("data/crossref.js", encoding="utf-8").read()
-        assert '"total":940' in x.replace(" ", "") or '"total":940' in x
-        print("哨兵全过：", sjz["meta"])
-        EOF
-      - name: 回归入口（浏览器断言页须在有头环境人工/截图验看，CI 只跑确定性子集）
-        run: python run_tests.py
+      - name: 数据哨兵（分节/航点/覆盖/交叉/引书/互文快照）
+        run: |
+          python - <<'EOF'
+          import io, json
+          riv = json.load(io.open("data/intermediate/rivers.json", encoding="utf-8"))
+          m = riv["meta"]
+          assert m["water_sections"] >= 100, f"分节 {m['water_sections']} < 100"
+          assert m["total_waypoints"] >= 500, f"航点 {m['total_waypoints']} < 500"
+          assert 6500 <= m["jing_chars"] <= 8200, f"经文 {m['jing_chars']} 越界"
+          t = io.open("data/river_data.js", encoding="utf-8").read()
+          sjz = json.loads(t[t.find("const SJZ = ") + len("const SJZ = "):].rstrip().rstrip(";"))
+          assert sjz["meta"]["coverage"] >= 60, f"覆盖 {sjz['meta']['coverage']}% < 60"
+          assert sjz["meta"]["crossings"] <= 4, f"自交叉 {sjz['meta']['crossings']} > 4"
+          cites = json.load(io.open("data/intermediate/citations.json", encoding="utf-8"))
+          assert len(cites["counts"]) >= 350, "引书 < 350"
+          x = io.open("data/crossref.js", encoding="utf-8").read()
+          assert '"total":940' in x.replace(" ", ""), "互文快照总数异常"
+          print("哨兵全过：水道", sjz["meta"]["waterways"], "· 覆盖", sjz["meta"]["coverage"],
+                "% · 引书", len(cites["counts"]), "· 互文 940")
+          EOF
+      - name: 经注分离校准（方法 B 硬门）
+        run: python tools/calibrate_jing.py --strict
+      - name: 浏览器断言页说明（须有头环境人工/截图验看，CI 不跑）
+        run: echo "tests/assert_data.html（10 项）· tests/assert_reader.html（7 项）——证据见 docs/evidence/"
