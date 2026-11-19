@@ -169,9 +169,29 @@ def main():
                         path.append(wp["pos"])
                 waypoints.append(wp)
             anchor_base += len(sec["jing"])
-        # 反交叉（试探偏移）+ 跳段检测（终版折线上）
+        # 反交叉（试探偏移）+ 跳段检测 + 里程标尺（终版折线上）
         pos_wps = [wp for wp in waypoints if "pos" in wp and not wp.get("mythic")]
         path = uncross(path, pos_wps)
+        # 循水里程：航点链累计折线 km（诚实口径=直线段折线长，非河道全长）
+        acc = 0.0
+        for k in range(1, len(path)):
+            acc += dist_km(path[k - 1], path[k])
+            pos_wps[k]["km"] = round(acc, 1)
+        total_km = round(acc, 1) if path else 0
+        # 长段细分：>100km 直段按 ~25km 插点（几何不变；防高倍缩放下
+        # Leaflet _clipPoints 对超长段的投影差递归爆栈——v12 实测教训）
+        fine = []
+        for k in range(len(path) - 1):
+            a, b = path[k], path[k + 1]
+            d = dist_km(a, b)
+            fine.append(a)
+            if d > 40:
+                n = int(d // 15)
+                for j in range(1, n + 1):
+                    t = j / (n + 1)
+                    fine.append([round(a[0] + (b[0] - a[0]) * t, 4), round(a[1] + (b[1] - a[1]) * t, 4)])
+        fine.append(path[-1]) if path else None
+        path = fine
         jumps = 0
         for k in range(1, len(path)):
             if dist_km(path[k - 1], path[k]) > 200:
@@ -207,6 +227,7 @@ def main():
             "citationKinds": sum(s["stats"]["citation_kinds"] for s in m["sections"]),
             "legendHits": sum(s["stats"]["legend_hits"] for s in m["sections"]),
             "hydroHits": sum(s["stats"]["hydro_hits"] for s in m["sections"]),
+            "totalKm": total_km,
             "jumps": jumps,
             "crossings": n_cross,
         }

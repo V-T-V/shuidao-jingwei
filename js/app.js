@@ -63,7 +63,7 @@ const SJAPP = (() => {
       document.getElementById("smoothlink").textContent = on ? "≈ 平滑·" : "≈ 平滑";
     });
     document.getElementById("tdlink").addEventListener("click", () => {
-      location.href = "3d.html?v=11";
+      location.href = "3d.html?v=16";
     });
     document.getElementById("rtts").addEventListener("click", () => SJREADER.ttsToggle());
     const nightBtn = document.getElementById("nightlink");
@@ -158,7 +158,9 @@ const SJAPP = (() => {
     html += `<div class="sect"><h3>统计</h3><p class="kv">` +
       `注文字数 <b>${w.stats.zhuChars.toLocaleString()}</b> · 经文 <b>${w.stats.jingChars}</b> 字<br>` +
       `引书 <b>${w.stats.citationKinds}</b> 种 <b>${w.stats.citations}</b> 次 · 传说命中 <b>${w.stats.legendHits}</b><br>` +
-      `水文词命中 <b>${w.stats.hydroHits}</b>${w.stats.jumps ? ` · ⚠ 可疑跳段 <b>${w.stats.jumps}</b>` : ""}</p></div>`;
+      `水文词命中 <b>${w.stats.hydroHits}</b>` +
+      (w.stats.totalKm ? ` · 折线全长 <b>${w.stats.totalKm.toLocaleString()}</b> km` : "") +
+      `${w.stats.jumps ? ` · ⚠ 可疑跳段 <b>${w.stats.jumps}</b>` : ""}</p></div>`;
     // 后世引用（互文）
     const xm = (typeof SJZ_XREF !== "undefined" && SJZ_XREF.waterMentions && SJZ_XREF.waterMentions[w.name]) || 0;
     if (xm) html += `<div class="sect"><h3>后世引用</h3><p class="kv">《读史方舆纪要》提及此水 <b>${xm}</b> 次 ` +
@@ -191,7 +193,7 @@ const SJAPP = (() => {
     if (!t) {
       body.innerHTML = `<p class="kv">加载中……</p>`;
       const s = document.createElement("script");
-      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=11`;
+      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=16`;
       s.onload = () => openVol(v, q);
       document.head.appendChild(s);
       return;

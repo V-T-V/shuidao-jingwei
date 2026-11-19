@@ -27,7 +27,7 @@ const SJREADER = (() => {
     if (ensureSections._p) return ensureSections._p;
     ensureSections._p = new Promise((ok, bad) => {
       const s = document.createElement("script");
-      s.src = "data/sections.js?v=11";
+      s.src = "data/sections.js?v=16";
       s.onload = ok;
       s.onerror = () => bad(new Error("sections.js 加载失败"));
       document.head.appendChild(s);
@@ -164,8 +164,11 @@ const SJREADER = (() => {
 
   function updateProg(w, i, total) {
     const pct = total > 1 ? Math.round(i / (total - 1) * 100) : 100;
+    const wp = anchorPos(w, i);
+    const km = wp && wp.km != null ? ` · 已行 ${Math.round(wp.km).toLocaleString()}` : "";
+    const tot = w.stats.totalKm ? `/${w.stats.totalKm.toLocaleString()} km` : "";
     document.getElementById("rprog").textContent =
-      `${w.name} · 源→终 ${pct}%`;
+      `${w.name} · 源→终 ${pct}%${km}${tot}`;
   }
 
   /* 滚动跟随：可视区中点最近的锚即当前锚（轻量节流） */

@@ -66,13 +66,13 @@ const SJMAP = (() => {
       if (!w.path || w.path.length < 2) return;
       const sel = w.id === selId;
       const line = L.polyline(smoothPath(w.path), {
-        className: "rivline",
+        className: "rivline", smoothFactor: 0,
         color: sel ? "#b23a2e" : colorOf(w),
         weight: sel ? lineWeight(w) + 2.4 : lineWeight(w),
         opacity: sel ? 1 : .82,
         dashArray: w.stats.jumps > 2 ? "10 5" : null,
       });
-      line.on("click", () => select(w.id, {fly:false}));
+      line.on("click", () => { select(w.id, {fly: false}); onSelect && onSelect(w); });
       line.bindTooltip(`${w.name} · ${w.stats.chars} 字 · ${w.waypoints.length} 航点`,
         { direction: "top", opacity: .95, className: "ftip" });
       line.addTo(rivLayer);
@@ -112,7 +112,7 @@ const SJMAP = (() => {
     if (!on) return;
     const MS = modernSet();
     MS.forEach(m => {
-      L.polyline(m.pts, { className: "modernline", color: m.color, weight: 3.4, opacity: .9, dashArray: "2 7" })
+      L.polyline(m.pts, { className: "modernline", smoothFactor: 0, color: m.color, weight: 3.4, opacity: .9, dashArray: "2 7" })
         .bindTooltip(`今·${m.key}`, { direction: "top" }).addTo(modernLayer);
     });
     // 改道区：古折线（对应水道）每段中点距今水线垂距 > DEVIATION_KM → 朱红高亮
@@ -123,7 +123,7 @@ const SJMAP = (() => {
         const mid = [(w.path[i][0] + w.path[i + 1][0]) / 2, (w.path[i][1] + w.path[i + 1][1]) / 2];
         if (distToPolyline(mid, m.pts) > DEVIATION_KM) {
           L.polyline([w.path[i], w.path[i + 1]], {
-            className: "devzone", color: "#b23a2e", weight: 7, opacity: .55,
+            className: "devzone", smoothFactor: 0, color: "#b23a2e", weight: 7, opacity: .55,
           }).bindTooltip(`改道区 · ${w.name}（古今偏差 > ${DEVIATION_KM}km）`, { direction: "top" })
             .addTo(devLayer);
         }
@@ -156,7 +156,8 @@ const SJMAP = (() => {
         map.fitBounds(L.latLngBounds(w.path).pad(.25), { animate: true, duration: 1.1 });
       }
     }
-    onSelect && onSelect(w);
+    /* onSelect 仅由用户点击触发（见折线 click）——此处不再回调，
+       防 onSelect→openWater→select 的重入环（栈溢出根源） */
   }
 
   function flyTo(pos, zoom = 8) {
