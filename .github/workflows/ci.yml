@@ -1,0 +1,46 @@
+# 水道经纬 · push/PR 门禁——audit.yml 确定性子集的 push/PR 版（命令逐条同源，勿单边漂移）。
+# 本站此前仅周六 audit、push 无门禁；此 workflow 补上：每次 push/PR 跑确定性三件套。
+# 浏览器断言页不入 CI（取舍注明，承 audit.yml 口径）：tests/assert_data.html（10 项）与
+# tests/assert_reader.html（7 项）按本站惯例以有头环境人工/截图验看，证据落 docs/evidence/
+# ——CI 不静默跳过任何在跑检查，此处只是显式申明断言页的证据口径不在 runner 上。
+# 依赖说明：lint.py / calibrate_jing.py / 内联哨兵纯 stdlib，无需 pip 装包。
+name: CI
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: lint（确定性检查全量）
+        run: python tools/lint.py
+      - name: 数据哨兵（分节/航点/覆盖/交叉/引书/互文快照）
+        run: |
+          python - <<'EOF'
+          import io, json
+          riv = json.load(io.open("data/intermediate/rivers.json", encoding="utf-8"))
+          m = riv["meta"]
+          assert m["water_sections"] >= 100, f"分节 {m['water_sections']} < 100"
+          assert m["total_waypoints"] >= 500, f"航点 {m['total_waypoints']} < 500"
+          assert 6500 <= m["jing_chars"] <= 8200, f"经文 {m['jing_chars']} 越界"
+          t = io.open("data/river_data.js", encoding="utf-8").read()
+          sjz = json.loads(t[t.find("const SJZ = ") + len("const SJZ = "):].rstrip().rstrip(";"))
+          assert sjz["meta"]["coverage"] >= 60, f"覆盖 {sjz['meta']['coverage']}% < 60"
+          assert sjz["meta"]["crossings"] <= 4, f"自交叉 {sjz['meta']['crossings']} > 4"
+          cites = json.load(io.open("data/intermediate/citations.json", encoding="utf-8"))
+          assert len(cites["counts"]) >= 350, "引书 < 350"
+          x = io.open("data/crossref.js", encoding="utf-8").read()
+          assert '"total":940' in x.replace(" ", ""), "互文快照总数异常"
+          print("哨兵全过：水道", sjz["meta"]["waterways"], "· 覆盖", sjz["meta"]["coverage"],
+                "% · 引书", len(cites["counts"]), "· 互文 940")
+          EOF
+      - name: 经注分离校准（方法 B 硬门）
+        run: python tools/calibrate_jing.py --strict
+      - name: 浏览器断言页说明（须有头环境人工/截图验看，CI 不跑）
+        run: echo "tests/assert_data.html（10 项）· tests/assert_reader.html（7 项）——证据见 docs/evidence/"

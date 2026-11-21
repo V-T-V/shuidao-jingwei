@@ -1,5 +1,6 @@
 # 水道经纬 · Waterway Jingwei
 
+[![CI](https://github.com/V-T-V/shuidao-jingwei/actions/workflows/ci.yml/badge.svg)](https://github.com/V-T-V/shuidao-jingwei/actions/workflows/ci.yml)
 **[▸ 线上版](https://v-t-v.github.io/shuidao-jingwei/)** · [发版 v1.2.1](https://github.com/V-T-V/shuidao-jingwei/releases/tag/v1.2.1)
 
 北魏·郦道元《水经注》四十卷数字人文平台——方舆经纬（[D:\W_A_W\HHH](../HHH)）的姊妹项目。
