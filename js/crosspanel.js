@@ -17,6 +17,7 @@ const SJXREF = (() => {
 
   let tab = "gu";          /* "gu" 顾祖禹 | "ql" 引伽蓝记 */
   let qlReq = null;        /* 懒加载去重（仿 stats.js inventoryList） */
+  let xkReq = null;        /* 引霞客数据懒加载（data/xrev_xk.js，XXK 只读桥回程） */
 
   function open(which) {
     if (which) tab = which;
@@ -26,19 +27,24 @@ const SJXREF = (() => {
     document.getElementById("pmeta").innerHTML = tab === "gu"
       ? `<span>《读史方舆纪要》引《水经注》</span><span>全书引用快照</span>` +
         `<span>跨书 · 跨 1,100 年</span>`
-      : `<span>谷水注 / 洛水注 × 伽蓝记名物</span><span>伽蓝经纬站际桥（回程）</span>` +
-        `<span>同城异代 · 郦 527 前 → 杨 547</span>`;
+      : tab === "ql"
+      ? `<span>谷水注 / 洛水注 × 伽蓝记名物</span><span>伽蓝经纬站际桥（回程）</span>` +
+        `<span>同城异代 · 郦 527 前 → 杨 547</span>`
+      : `<span>霞客游记语料 × 本站水道</span><span>霞客经纬站际桥（回程）</span>` +
+        `<span>千年对话 · 郦 527 前 → 徐 1613-1639</span>`;
     const body = document.getElementById("pbody");
     body.className = "";
     body.innerHTML =
       `<div class="xtabs">` +
       `<button class="xtab${tab === "gu" ? " cur" : ""}" data-t="gu">顾祖禹引郦注</button>` +
-      `<button class="xtab${tab === "ql" ? " cur" : ""}" data-t="ql">引伽蓝记</button></div>` +
+      `<button class="xtab${tab === "ql" ? " cur" : ""}" data-t="ql">引伽蓝记</button>` +
+      `<button class="xtab${tab === "xk" ? " cur" : ""}" data-t="xk">引霞客</button></div>` +
       `<div id="xbody"></div>`;
     body.querySelectorAll(".xtab").forEach(b =>
       b.addEventListener("click", () => open(b.dataset.t)));
     const host = body.querySelector("#xbody");
     if (tab === "gu") renderGu(host);
+    else if (tab === "xk") xkLoad(host);
     else qlLoad(host);
     document.getElementById("panel").classList.add("open");
   }
@@ -80,6 +86,85 @@ const SJXREF = (() => {
       }));
   }
 
+  /* ── 页签三：引霞客（霞客经纬站际桥回程） ──
+     数据 data/xrev_xk.js 懒加载（tools/build_xrev_xk.py 生成，XXK 只读）；
+     经行=霞客锚点距水道折线 ≤30km（脚本判定）；深链 ../XXK/#trip= 为相对兄弟路径。 */
+  function xkLoad(host) {
+    if (window.SJZ_XK) return renderXk(host);
+    host.innerHTML = `<div class="sect"><p class="kv">互查数据装载中…</p></div>`;
+    if (xkReq) return;
+    xkReq = new Promise(ok => {
+      const s = document.createElement("script");
+      s.src = "data/xrev_xk.js?v=19";
+      s.onload = ok;
+      s.onerror = ok;
+      document.head.appendChild(s);
+    }).then(() => {
+      xkReq = null;
+      const h = document.getElementById("xbody");
+      if (!h) return;
+      if (!window.SJZ_XK) {
+        h.innerHTML = `<div class="sect"><p class="kv">互查数据未载入（离线首访）——联网后重开即得。</p></div>`;
+        return;
+      }
+      renderXk(h);
+    });
+  }
+
+  function renderXk(host) {
+    const d = window.SJZ_XK, t = d.totals, m = d.xkMeta;
+    let html = `<div class="statgrid">
+      <div class="statcard"><b>${t.mentions}</b><span>霞客提及（次）</span></div>
+      <div class="statcard"><b>${t.waters}</b><span>命中水道</span></div>
+      <div class="statcard"><b>${t.visited}/${t.waters}</b><span>霞客经行（≤30km）</span></div>
+      <div class="statcard"><b>${t.noCorr}</b><span>水经谱外水名（次）</span></div>
+    </div>`;
+    html += `<div class="sect"><h3>霞客语料快照</h3><p class="kv">` +
+      `霞客经纬三源语料：${m.pieces} 篇 · ${m.days} 日条 · ${m.anchors} 锚 · ` +
+      `${m.km.toLocaleString()} km 可信里程——游记正文水名提及与锚点经行双重对读。</p></div>`;
+
+    html += `<div class="sect"><h3>水道 × 霞客 <span style="font-size:10px;color:var(--ink-faint)">` +
+      `经行=锚点距折线 ≤30km · ↗霞客 直达其游程</span></h3>`;
+    d.waters.forEach(w => {
+      html += `<div class="xkind">${w.name} · 提及 ${w.xkMentions} 次${w.visited ? " · ✓霞客经行" : ""}</div>`;
+      if (w.visited) {
+        html += `<div class="hbar"><span class="hn" style="width:150px">${w.visit.place}</span>` +
+          `<span class="hc">距折线 ${w.visit.km}km · ${w.visit.title} ` +
+          `<a class="xlink" href="${w.visit.href}" target="_blank" rel="noopener" ` +
+          `title="赴霞客经纬 · 此程此日">↗霞客</a></span></div>`;
+      } else if (w.nearNote) {
+        html += `<div class="xsamp">${w.nearNote}</div>`;
+      }
+      w.samples.slice(0, 2).forEach(s => {
+        html += `<div class="xsamp">…${s.ctx}…（${s.piece}·${s.form}）</div>`;
+      });
+    });
+    html += `</div>`;
+
+    html += `<div class="sect"><h3>对读 · ${d.feature.title}</h3>`;
+    d.feature.pairs.forEach(p => {
+      const js = d.waters.find(x => x.name === "江水");
+      html += `<div class="xpair"><div class="xpname">【${p.topic}】` +
+        `<a class="xlink" href="${p.xkHref}" target="_blank" rel="noopener">↗溯江纪源</a></div>` +
+        `<div class="xps"><span class="xptag">江水注</span>${p.sjz}` +
+        (js ? ` <span class="xlink" data-r="${js.sjzId}" title="循水而读 江水">↗循水</span>` : "") +
+        `</div>` +
+        `<div class="xpq"><span class="xptag">霞客</span>${p.xk}</div></div>`;
+    });
+    html += `</div>`;
+
+    const nc = d.noCorrespondence.map(w => `${w.name}×${w.n}`).join(" · ");
+    const ex = d.excluded.filter(e => e.n > 0).map(e => `${e.name}(${e.n})`).join("、");
+    html += `<div class="sect"><h3>无对应与消歧（如实）</h3><p class="kv">` +
+      `· 水经谱外水名 ${t.noCorr} 次：${nc}<br>` +
+      `· 桥侧消歧排除：${ex}（详见霞客经纬「水经」页签）</p></div>`;
+
+    html += `<p class="kv">${d.note} <a class="xlink" href="${d.site}" target="_blank" rel="noopener">↗霞客经纬</a></p>`;
+    host.innerHTML = html;
+    host.querySelectorAll(".xlink[data-r]").forEach(el =>
+      el.addEventListener("click", () => SJREADER.open(el.dataset.r)));
+  }
+
   /* ── 页签二：引伽蓝记（伽蓝经纬站际桥回程） ──
      数据 data/xrev_ql.js 懒加载（tools/build_xrev_ql.py 生成，LYGL 只读）；
      深链 ../LYGL/#juan=#gl= / #gate= 为相对兄弟路径——须父目录同根服务。 */
@@ -89,7 +174,7 @@ const SJXREF = (() => {
     if (qlReq) return;
     qlReq = new Promise(ok => {
       const s = document.createElement("script");
-      s.src = "data/xrev_ql.js?v=18";
+      s.src = "data/xrev_ql.js?v=19";
       s.onload = ok;
       s.onerror = ok;
       document.head.appendChild(s);

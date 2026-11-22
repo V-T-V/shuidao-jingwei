@@ -95,7 +95,7 @@ const SJSTATS = (() => {
     };
     if (typeof window.SJZ_INV !== "undefined") { go(); return; }
     const s = document.createElement("script");
-    s.src = "data/inventory.js?v=18";
+    s.src = "data/inventory.js?v=19";
     s.onload = go;
     s.onerror = go;
     document.head.appendChild(s);

@@ -97,7 +97,27 @@ def main():
     for frag in ["#w=", "#r=", "#c=", "#m="]:
         ok(frag in app or frag.replace("#", "") in app, f"app.js 深链语法缺 {frag}")
 
-    # ── 8 manifest ──
+    # ── 8 引霞客桥（站际回程，XXK 只读） ──
+    xk = os.path.join(ROOT, "data", "xrev_xk.js")
+    ok(os.path.exists(xk), "data/xrev_xk.js 缺失——重跑 tools/build_xrev_xk.py")
+    if os.path.exists(xk):
+        xraw = read("data/xrev_xk.js")
+        xm = re.search(r"window\.SJZ_XK = (\{.*\});", xraw, re.S)
+        ok(xm, "xrev_xk.js 无 SJZ_XK 载体")
+        if xm:
+            import json as _j
+            X = _j.loads(xm.group(1))
+            tt = X["totals"]
+            ok(tt["waters"] == len(X["waters"]) and tt["waters"] >= 8, "引霞客桥水道计数不自洽")
+            ok(0 <= tt["visited"] <= tt["waters"], "引霞客桥经行数越界")
+            ok(tt["mentions"] == sum(w["xkMentions"] for w in X["waters"]), "引霞客桥提及数与分项和不一致")
+            hrefs = [w["visit"]["href"] for w in X["waters"] if w.get("visit")]
+            hrefs += [p["xkHref"] for p in X["feature"]["pairs"]]
+            ok(hrefs and all(h.startswith("../XXK/#") for h in hrefs),
+               "引霞客深链须为 ../XXK/# 前缀（父目录同根服务约定）")
+            ok(tt["pairs"] >= 2, "引霞客对读特辑 < 2 对")
+
+    # ── 8b manifest ──
     mani = read("manifest.json")
     for icon in re.findall(r'"src":\s*"(icons/[^"]+)"', mani):
         ok(os.path.exists(os.path.join(ROOT, icon)), f"manifest 引用图标缺失: {icon}")
