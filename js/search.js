@@ -35,7 +35,7 @@ const SJSEARCH = (() => {
       if (loadedVols.has(v)) continue;
       loadedVols.add(v);
       const s = document.createElement("script");
-      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=20`;
+      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=21`;
       document.head.appendChild(s);
     }
   }

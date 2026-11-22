@@ -3,22 +3,23 @@
                        TILES 瓦片限额存（stale-while-revalidate）
    VERSION 与 index.html 的 ?v 同步递增（当前 v1）。 */
 
-const VERSION = "v20";
+const VERSION = "v21";
 const SHELL = `sjz-${VERSION}-shell`;
 const TEXTS = `sjz-${VERSION}-texts`;
 const TILES = `sjz-${VERSION}-tiles`;
 const TILE_CAP = 1200;
 
 const SHELL_FILES = [
-  "./", "./index.html", "./manifest.json",
-  "./css/main.css?v=20",
+  "./", "./index.html", "./3d.html", "./manifest.json",
+  "./css/main.css?v=21",
   "./vendor/leaflet.js", "./vendor/leaflet.css",
-  "./data/river_data.js?v=20", "./data/citations.js?v=20", "./data/crossref.js?v=20", "./data/modern_rivers.js?v=20",
+  "./vendor/maplibre-gl.js?v=21", "./vendor/maplibre-gl.css?v=21",
+  "./data/river_data.js?v=21", "./data/citations.js?v=21", "./data/crossref.js?v=21", "./data/modern_rivers.js?v=21",
   "./icons/icon-192.png", "./icons/icon-512.png",
-  "./js/config.js?v=20", "./js/map.js?v=20", "./js/tree.js?v=20",
-  "./js/reader.js?v=20", "./js/search.js?v=20", "./js/citespanel.js?v=20",
-  "./js/stats.js?v=20", "./js/crosspanel.js?v=20", "./js/exporter.js?v=20",
-  "./js/app.js?v=20", "./js/ftworker.js",
+  "./js/config.js?v=21", "./js/map.js?v=21", "./js/tree.js?v=21",
+  "./js/reader.js?v=21", "./js/search.js?v=21", "./js/citespanel.js?v=21",
+  "./js/stats.js?v=21", "./js/crosspanel.js?v=21", "./js/exporter.js?v=21",
+  "./js/app.js?v=21", "./js/ftworker.js",
 ];
 
 self.addEventListener("install", e => {

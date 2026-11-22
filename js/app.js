@@ -63,7 +63,7 @@ const SJAPP = (() => {
       document.getElementById("smoothlink").textContent = on ? "≈ 平滑·" : "≈ 平滑";
     });
     document.getElementById("tdlink").addEventListener("click", () => {
-      location.href = "3d.html?v=20";
+      location.href = "3d.html?v=21";
     });
     document.getElementById("rtts").addEventListener("click", () => SJREADER.ttsToggle());
     const nightBtn = document.getElementById("nightlink");
@@ -193,7 +193,7 @@ const SJAPP = (() => {
     if (!t) {
       body.innerHTML = `<p class="kv">加载中……</p>`;
       const s = document.createElement("script");
-      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=20`;
+      s.src = `data/text/j${String(v).padStart(2, "0")}.js?v=21`;
       s.onload = () => openVol(v, q);
       document.head.appendChild(s);
       return;
