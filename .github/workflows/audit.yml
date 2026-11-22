@@ -1,15 +1,17 @@
-# 水道经纬 · 周六自动审计（承方舆经纬 audit.yml——本地建档不激活，push 后生效）
-name: audit
+# 周六系列审计（承方舆经纬 audit.yml 范式：错峰调度 + 手动触发，每步失败即红，无吞错兜底——教训 20）。
+# 与方舆 09:30 错峰 10 分钟，六站巡检一个上午依序跑完；证据口径以 Actions 日志为准。
+# 步骤与本仓 ci.yml 同源（确定性子集：lint + 数据断言 + 账目 + 浏览器断言页）。
+name: 深度审计
 on:
   schedule:
-    - cron: "30 1 * * 6"   # 周六 09:30 CST
+    - cron: "40 1 * * 6"   # 周六 09:40 CST
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  deterministic:
+  audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,27 +20,24 @@ jobs:
           python-version: "3.12"
       - name: lint（确定性检查全量）
         run: python tools/lint.py
-      - name: 数据哨兵（分节/航点/覆盖/交叉/引书/互文快照）
+      - name: 数据哨兵（分节/航点/覆盖/引书/互文快照）
         run: |
           python - <<'EOF'
           import io, json
           riv = json.load(io.open("data/intermediate/rivers.json", encoding="utf-8"))
           m = riv["meta"]
-          assert m["water_sections"] >= 100, f"分节 {m['water_sections']} < 100"
-          assert m["total_waypoints"] >= 500, f"航点 {m['total_waypoints']} < 500"
-          assert 6500 <= m["jing_chars"] <= 8200, f"经文 {m['jing_chars']} 越界"
+          assert m["water_sections"] >= 100
+          assert m["total_waypoints"] >= 500
+          assert 6500 <= m["jing_chars"] <= 8200
           t = io.open("data/river_data.js", encoding="utf-8").read()
           sjz = json.loads(t[t.find("const SJZ = ") + len("const SJZ = "):].rstrip().rstrip(";"))
-          assert sjz["meta"]["coverage"] >= 60, f"覆盖 {sjz['meta']['coverage']}% < 60"
-          assert sjz["meta"]["crossings"] <= 4, f"自交叉 {sjz['meta']['crossings']} > 4"
+          assert sjz["meta"]["coverage"] >= 60
+          assert sjz["meta"]["crossings"] <= 4
           cites = json.load(io.open("data/intermediate/citations.json", encoding="utf-8"))
-          assert len(cites["counts"]) >= 350, "引书 < 350"
+          assert len(cites["counts"]) >= 350
           x = io.open("data/crossref.js", encoding="utf-8").read()
-          assert '"total":940' in x.replace(" ", ""), "互文快照总数异常"
-          print("哨兵全过：水道", sjz["meta"]["waterways"], "· 覆盖", sjz["meta"]["coverage"],
-                "% · 引书", len(cites["counts"]), "· 互文 940")
+          assert '"total":940' in x.replace(" ", "")
+          print("哨兵全过")
           EOF
       - name: 经注分离校准（方法 B 硬门）
         run: python tools/calibrate_jing.py --strict
-      - name: 浏览器断言页说明（须有头环境人工/截图验看，CI 不跑）
-        run: echo "tests/assert_data.html（10 项）· tests/assert_reader.html（7 项）——证据见 docs/evidence/"
