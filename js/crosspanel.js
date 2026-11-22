@@ -95,7 +95,7 @@ const SJXREF = (() => {
     if (xkReq) return;
     xkReq = new Promise(ok => {
       const s = document.createElement("script");
-      s.src = "data/xrev_xk.js?v=19";
+      s.src = "data/xrev_xk.js?v=20";
       s.onload = ok;
       s.onerror = ok;
       document.head.appendChild(s);
@@ -174,7 +174,7 @@ const SJXREF = (() => {
     if (qlReq) return;
     qlReq = new Promise(ok => {
       const s = document.createElement("script");
-      s.src = "data/xrev_ql.js?v=19";
+      s.src = "data/xrev_ql.js?v=20";
       s.onload = ok;
       s.onerror = ok;
       document.head.appendChild(s);

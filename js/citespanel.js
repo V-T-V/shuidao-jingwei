@@ -17,7 +17,7 @@ const SJCITES = (() => {
     if (ensureQuotes._p) return ensureQuotes._p;
     ensureQuotes._p = new Promise(ok => {
       const s = document.createElement("script");
-      s.src = "data/cites_quotes.js?v=19";
+      s.src = "data/cites_quotes.js?v=20";
       s.onload = ok; s.onerror = ok;
       document.head.appendChild(s);
     });

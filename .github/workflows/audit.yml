@@ -41,3 +41,12 @@ jobs:
           EOF
       - name: 经注分离校准（方法 B 硬门）
         run: python tools/calibrate_jing.py --strict
+      - name: 起本地服务（离线三验前置）
+        run: |
+          python -m http.server 9300 --bind 127.0.0.1 &
+          # 就绪探针：重试只治冷启动竞态，起不来照样红（非吞错）
+          curl -sf --retry 8 --retry-delay 2 --retry-connrefused http://127.0.0.1:9300/index.html -o /dev/null && echo server-up
+      - name: 离线三验 offline_check（SW 在位 · 断网重载 · 数据层离线可得）
+        env:
+          SDJW_BROWSER: /usr/bin/google-chrome
+        run: python tools/offline_check.py

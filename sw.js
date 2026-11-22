@@ -3,7 +3,7 @@
                        TILES 瓦片限额存（stale-while-revalidate）
    VERSION 与 index.html 的 ?v 同步递增（当前 v1）。 */
 
-const VERSION = "v19";
+const VERSION = "v20";
 const SHELL = `sjz-${VERSION}-shell`;
 const TEXTS = `sjz-${VERSION}-texts`;
 const TILES = `sjz-${VERSION}-tiles`;
@@ -11,14 +11,14 @@ const TILE_CAP = 1200;
 
 const SHELL_FILES = [
   "./", "./index.html", "./manifest.json",
-  "./css/main.css?v=19",
+  "./css/main.css?v=20",
   "./vendor/leaflet.js", "./vendor/leaflet.css",
-  "./data/river_data.js?v=19", "./data/citations.js?v=19", "./data/crossref.js?v=19", "./data/modern_rivers.js?v=19",
+  "./data/river_data.js?v=20", "./data/citations.js?v=20", "./data/crossref.js?v=20", "./data/modern_rivers.js?v=20",
   "./icons/icon-192.png", "./icons/icon-512.png",
-  "./js/config.js?v=19", "./js/map.js?v=19", "./js/tree.js?v=19",
-  "./js/reader.js?v=19", "./js/search.js?v=19", "./js/citespanel.js?v=19",
-  "./js/stats.js?v=19", "./js/crosspanel.js?v=19", "./js/exporter.js?v=19",
-  "./js/app.js?v=19", "./js/ftworker.js",
+  "./js/config.js?v=20", "./js/map.js?v=20", "./js/tree.js?v=20",
+  "./js/reader.js?v=20", "./js/search.js?v=20", "./js/citespanel.js?v=20",
+  "./js/stats.js?v=20", "./js/crosspanel.js?v=20", "./js/exporter.js?v=20",
+  "./js/app.js?v=20", "./js/ftworker.js",
 ];
 
 self.addEventListener("install", e => {
@@ -30,7 +30,8 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => !k.endsWith(VERSION)).map(k => caches.delete(k)))
+      /* 精确保留本版三仓（承旗舰：endsWith(VERSION) 会误删自身 *-shell/*-texts——离线首验实证） */
+      Promise.all(keys.filter(k => ![SHELL, TEXTS, TILES].includes(k)).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
